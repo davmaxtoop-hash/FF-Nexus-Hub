@@ -1,0 +1,17 @@
+{
+  "name": "ff-nexus-hub",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "latest",
+    "bcryptjs": "latest",
+    "express": "latest",
+    "jsonwebtoken": "latest"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
