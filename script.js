@@ -175,7 +175,7 @@ async function adminLogin(){
   input.disabled=true;
   if(error)error.textContent="Signing in…";
   try{
-    const r=await fetch("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:input.value})});
+    const r=await fetch("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:input.value.trim()})});
     const x=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(x.error||"Admin login failed.");
     sessionStorage.setItem(ADMIN_SESSION_KEY,x.token);

@@ -9,7 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DATABASE_URL = process.env.DATABASE_URL;
 const JWT_SECRET = process.env.JWT_SECRET || '';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
+const ADMIN_PASSWORD = String(process.env.ADMIN_PASSWORD || '').trim();
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || '';
 const PAYSTACK_PUBLIC_KEY = process.env.PAYSTACK_PUBLIC_KEY || 'pk_test_aa24b40e2dc0408ac5cdc038b117f6dd191d5a3c';
 const APP_URL = process.env.APP_URL || '';
@@ -120,7 +120,7 @@ app.get('/api/config',(req,res)=>res.json({listingFee:LISTING_FEE_NGN,paystackPu
 app.post('/api/admin/login',(req,res)=>{
   try{
     if(!JWT_SECRET || !ADMIN_PASSWORD) return res.status(503).json({error:'Admin authentication is not configured. Add JWT_SECRET and ADMIN_PASSWORD to the server environment.'});
-    const password=String(req.body?.password||'');
+    const password=String(req.body?.password ?? '').trim();
     const a=Buffer.from(password), b=Buffer.from(ADMIN_PASSWORD);
     if(a.length!==b.length || !crypto.timingSafeEqual(a,b)) return res.status(401).json({error:'Incorrect password.'});
     res.json({token:signAdmin(),expiresIn:300});
