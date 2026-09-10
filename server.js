@@ -9,11 +9,25 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DATABASE_URL = process.env.DATABASE_URL;
 const JWT_SECRET = process.env.JWT_SECRET || '';
-const ADMIN_PASSWORD = String(process.env.ADMIN_PASSWORD || '').trim();
+const ADMIN_PASSWORD = normalizeAdminPassword(process.env.ADMIN_PASSWORD || '');
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || '';
 const PAYSTACK_PUBLIC_KEY = process.env.PAYSTACK_PUBLIC_KEY || 'pk_test_aa24b40e2dc0408ac5cdc038b117f6dd191d5a3c';
 const APP_URL = process.env.APP_URL || '';
 const LISTING_FEE_NGN = Math.max(1, Math.round(Number(process.env.LISTING_FEE_NGN || 10000)));
+
+function normalizeAdminPassword(value){
+  let s=String(value ?? '');
+  // Normalize copied/pasted Unicode and remove invisible characters that can
+  // accidentally get into a Railway variable or mobile browser input.
+  try{s=s.normalize('NFKC');}catch(e){}
+  s=s.replace(/[\u200B-\u200D\uFEFF]/g,'').trim();
+  // If the Railway value was pasted with matching surrounding quotes, accept
+  // the intended password rather than treating the quotes as part of it.
+  if(s.length>=2 && ((s[0]==='"' && s[s.length-1]==='"') || (s[0]==="'" && s[s.length-1]==="'"))){
+    s=s.slice(1,-1).trim();
+  }
+  return s;
+}
 app.set('trust proxy', 1);
 
 app.use(express.json({ limit: '8mb', verify: (req,res,buf)=>{ req.rawBody=buf; } }));
@@ -120,9 +134,12 @@ app.get('/api/config',(req,res)=>res.json({listingFee:LISTING_FEE_NGN,paystackPu
 app.post('/api/admin/login',(req,res)=>{
   try{
     if(!JWT_SECRET || !ADMIN_PASSWORD) return res.status(503).json({error:'Admin authentication is not configured. Add JWT_SECRET and ADMIN_PASSWORD to the server environment.'});
-    const password=String(req.body?.password ?? '').trim();
-    const a=Buffer.from(password), b=Buffer.from(ADMIN_PASSWORD);
-    if(a.length!==b.length || !crypto.timingSafeEqual(a,b)) return res.status(401).json({error:'Incorrect password.'});
+    const password=normalizeAdminPassword(req.body?.password ?? '');
+    // Compare fixed-size SHA-256 digests so the comparison is always
+    // constant-time and is not affected by different input lengths.
+    const a=crypto.createHash('sha256').update(password,'utf8').digest();
+    const b=crypto.createHash('sha256').update(ADMIN_PASSWORD,'utf8').digest();
+    if(!crypto.timingSafeEqual(a,b)) return res.status(401).json({error:'Incorrect password.'});
     res.json({token:signAdmin(),expiresIn:300});
   }catch(e){console.error(e);res.status(500).json({error:'Could not log in to admin.'});}
 });
