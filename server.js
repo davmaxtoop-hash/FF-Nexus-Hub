@@ -9,7 +9,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DATABASE_URL = process.env.DATABASE_URL;
 const JWT_SECRET = process.env.JWT_SECRET || '';
-const ADMIN_PASSWORD = normalizeAdminPassword(process.env.ADMIN_PASSWORD || '');
+const CONFIGURED_ADMIN_PASSWORD = normalizeAdminPassword(process.env.ADMIN_PASSWORD || '');
+// Local/offline-friendly password. For production, set ADMIN_PASSWORD in Railway.
+const ADMIN_PASSWORD = CONFIGURED_ADMIN_PASSWORD || 'Max is king';
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || '';
 const PAYSTACK_PUBLIC_KEY = process.env.PAYSTACK_PUBLIC_KEY || 'pk_test_aa24b40e2dc0408ac5cdc038b117f6dd191d5a3c';
 const APP_URL = process.env.APP_URL || '';
@@ -85,6 +87,11 @@ async function initDb(){
   )`;
   await sql`ALTER TABLE listing_applications ADD COLUMN IF NOT EXISTS payment_reference TEXT DEFAULT ''`;
   await sql`CREATE INDEX IF NOT EXISTS listing_applications_payment_reference_idx ON listing_applications(payment_reference)`;
+  await sql`CREATE TABLE IF NOT EXISTS site_content (
+    id INTEGER PRIMARY KEY DEFAULT 1,
+    data JSONB NOT NULL DEFAULT '{}'::jsonb,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`;
   await sql`CREATE TABLE IF NOT EXISTS tournament_registrations_db (
     id BIGSERIAL PRIMARY KEY,
     player_id BIGINT NOT NULL REFERENCES player_accounts(id) ON DELETE CASCADE,
@@ -131,6 +138,25 @@ function auth(req,res,next){
 app.get('/api/health',(req,res)=>res.status(dbReady()?200:503).json({ok:dbReady(),database:dbReady(),adminAuth:!!(JWT_SECRET&&ADMIN_PASSWORD)}));
 app.get('/api/config',(req,res)=>res.json({listingFee:LISTING_FEE_NGN,paystackPublicKey:PAYSTACK_PUBLIC_KEY}));
 
+app.get('/api/public-content', requireDb, async (req,res)=>{
+  try{
+    const rows=await sql`SELECT data FROM site_content WHERE id=1 LIMIT 1`;
+    res.json({data:rows[0]?.data||{}});
+  }catch(e){ console.error(e); res.status(500).json({error:'Could not load shared website content.'}); }
+});
+
+app.put('/api/admin/public-content', requireDb, adminAuth, async (req,res)=>{
+  try{
+    const data=req.body?.data;
+    if(!data || typeof data!=='object' || Array.isArray(data)) return res.status(400).json({error:'Invalid website content.'});
+    const serialized=JSON.stringify(data);
+    if(Buffer.byteLength(serialized,'utf8')>7*1024*1024) return res.status(413).json({error:'Website content is too large. Please use smaller images (under 3 MB each).'});
+    await sql`INSERT INTO site_content (id,data,updated_at) VALUES (1,${data},NOW())
+      ON CONFLICT (id) DO UPDATE SET data=EXCLUDED.data,updated_at=NOW()`;
+    res.json({ok:true});
+  }catch(e){ console.error(e); res.status(500).json({error:'Could not save shared website content.'}); }
+});
+
 app.post('/api/admin/login',(req,res)=>{
   try{
     if(!JWT_SECRET || !ADMIN_PASSWORD) return res.status(503).json({error:'Admin authentication is not configured. Add JWT_SECRET and ADMIN_PASSWORD to the server environment.'});
@@ -141,8 +167,8 @@ app.post('/api/admin/login',(req,res)=>{
     const b=crypto.createHash('sha256').update(ADMIN_PASSWORD,'utf8').digest();
     const matches=crypto.timingSafeEqual(a,b);
     if(!matches){
-      console.warn(`Admin login rejected: enteredLength=${password.length}, configuredLength=${ADMIN_PASSWORD.length}`);
-      return res.status(401).json({error:`Incorrect password. Server password length: ${ADMIN_PASSWORD.length}.`});
+      console.warn(`Admin login rejected: enteredLength=${password.length}`);
+      return res.status(401).json({error:'Incorrect password.'});
     }
     console.log('Admin login accepted.');
     res.json({token:signAdmin(),expiresIn:300});
