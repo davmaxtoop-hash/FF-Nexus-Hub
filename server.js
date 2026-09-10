@@ -135,11 +135,16 @@ app.post('/api/admin/login',(req,res)=>{
   try{
     if(!JWT_SECRET || !ADMIN_PASSWORD) return res.status(503).json({error:'Admin authentication is not configured. Add JWT_SECRET and ADMIN_PASSWORD to the server environment.'});
     const password=normalizeAdminPassword(req.body?.password ?? '');
-    // Compare fixed-size SHA-256 digests so the comparison is always
-    // constant-time and is not affected by different input lengths.
+    // Compare normalized values using fixed-size SHA-256 digests.
+    // This avoids timing leaks and also makes mobile copy/paste behavior predictable.
     const a=crypto.createHash('sha256').update(password,'utf8').digest();
     const b=crypto.createHash('sha256').update(ADMIN_PASSWORD,'utf8').digest();
-    if(!crypto.timingSafeEqual(a,b)) return res.status(401).json({error:'Incorrect password.'});
+    const matches=crypto.timingSafeEqual(a,b);
+    if(!matches){
+      console.warn(`Admin login rejected: enteredLength=${password.length}, configuredLength=${ADMIN_PASSWORD.length}`);
+      return res.status(401).json({error:`Incorrect password. Server password length: ${ADMIN_PASSWORD.length}.`});
+    }
+    console.log('Admin login accepted.');
     res.json({token:signAdmin(),expiresIn:300});
   }catch(e){console.error(e);res.status(500).json({error:'Could not log in to admin.'});}
 });
