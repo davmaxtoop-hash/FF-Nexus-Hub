@@ -44,7 +44,9 @@ The Express 5 wildcard route uses the supported /{*splat} syntax.
 
 IMPORTANT ARCHITECTURE NOTE
 ---------------------------
-Player accounts, player stats, applications, payments and tournament registrations are stored in Neon. Some of the visual admin content/settings (such as manually edited news, creator/vendor cards and some site settings) are still browser-localStorage based. Those changes are therefore not a shared multi-device CMS yet.
+Player accounts, player stats, applications, payments and tournament registrations are stored in Neon. Visual admin content/settings (news, creator/vendor cards, tournaments, payment methods and site settings) are also persisted to the Neon `site_content` table. Browser localStorage is used only as a local working cache. The public site reads the shared database copy, so content survives browser changes and server restarts when DATABASE_URL points to a persistent Neon database.
+
+The admin frontend now queues content saves to avoid concurrent PUT requests overwriting one another. It also avoids the old behavior where an old browser cache could overwrite newer database content at admin login. If an edit is made while the admin JWT has expired or the database is unavailable, the browser marks the content as unsynced and retries the local copy after the next successful admin login.
 
 SECURITY NOTES
 --------------

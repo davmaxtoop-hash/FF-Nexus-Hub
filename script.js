@@ -6,26 +6,84 @@ let PAYSTACK_PUBLIC_KEY="pk_test_aa24b40e2dc0408ac5cdc038b117f6dd191d5a3c";
 let SERVER_LISTING_FEE=null;
 async function loadServerConfig(){try{const r=await fetch('/api/config');if(!r.ok)return;const d=await r.json();if(Number.isFinite(Number(d.listingFee))&&Number(d.listingFee)>0)SERVER_LISTING_FEE=Number(d.listingFee);if(d.paystackPublicKey)PAYSTACK_PUBLIC_KEY=String(d.paystackPublicKey)}catch(e){}}
 function publicAdminData(){try{return JSON.parse(localStorage.getItem(PUBLIC_ADMIN_DATA_KEY)||"{}")}catch(e){return {}}}
+const ADMIN_SYNC_DIRTY_KEY="ff_nexus_hub_admin_sync_dirty";
+let adminSyncQueue=Promise.resolve();
+
+function hasLocalAdminContent(){
+  try{
+    const d=JSON.parse(localStorage.getItem(PUBLIC_ADMIN_DATA_KEY)||"{}");
+    return !!d && typeof d==="object" && Object.keys(d).length>0;
+  }catch(e){ return false; }
+}
+
 async function hydrateSharedAdminData(){
   try{
     const r=await fetch('/api/public-content',{cache:'no-store'});
-    if(!r.ok)return false;
+    if(!r.ok) return false;
     const x=await r.json();
-    if(x&&x.data&&typeof x.data==='object'){
+    if(x && x.data && typeof x.data==='object'){
+      // The database is authoritative for the public website. Never replace
+      // it with browser-local data during a normal public-page load.
       localStorage.setItem(PUBLIC_ADMIN_DATA_KEY,JSON.stringify(x.data));
       return true;
     }
-  }catch(e){}
+  }catch(e){
+    console.warn('Could not load shared website content:',e.message);
+  }
   return false;
 }
+
 async function syncAdminDataToServer(data){
   const token=sessionStorage.getItem(ADMIN_SESSION_KEY)||'';
-  if(!token)return false;
+  if(!token){
+    localStorage.setItem(ADMIN_SYNC_DIRTY_KEY,'1');
+    return false;
+  }
+  const payload=JSON.stringify({data});
+  adminSyncQueue=adminSyncQueue.then(async()=>{
+    try{
+      const r=await fetch('/api/admin/public-content',{
+        method:'PUT',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+        body:payload
+      });
+      const x=await r.json().catch(()=>({}));
+      if(!r.ok) throw new Error(x.error||'Could not sync website content.');
+      localStorage.removeItem(ADMIN_SYNC_DIRTY_KEY);
+      return true;
+    }catch(e){
+      localStorage.setItem(ADMIN_SYNC_DIRTY_KEY,'1');
+      console.warn('Shared website content sync failed:',e.message);
+      return false;
+    }
+  });
+  return adminSyncQueue;
+}
+
+async function loadSharedAdminDataForLogin(){
   try{
-    const r=await fetch('/api/admin/public-content',{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({data})});
-    if(!r.ok){const x=await r.json().catch(()=>({}));throw new Error(x.error||'Could not sync website content.');}
-    return true;
-  }catch(e){console.warn('Shared website content sync failed:',e.message);return false;}
+    const r=await fetch('/api/public-content',{cache:'no-store'});
+    if(!r.ok) throw new Error('Could not read shared website content.');
+    const x=await r.json();
+    const serverData=(x&&x.data&&typeof x.data==='object')?x.data:{};
+    const dirty=localStorage.getItem(ADMIN_SYNC_DIRTY_KEY)==='1';
+    const localData=(()=>{
+      try{return JSON.parse(localStorage.getItem(PUBLIC_ADMIN_DATA_KEY)||"{}")}catch(e){return {}}
+    })();
+
+    // If this browser has an unsynced edit, preserve it and upload it after
+    // login. Otherwise use the server copy so an old phone/browser cache
+    // cannot overwrite newer website content.
+    if(dirty && localData && Object.keys(localData).length){
+      await syncAdminDataToServer(localData);
+      return localData;
+    }
+    localStorage.setItem(PUBLIC_ADMIN_DATA_KEY,JSON.stringify(serverData));
+    return serverData;
+  }catch(e){
+    console.warn('Shared content login sync failed:',e.message);
+    return null;
+  }
 }
 function publicListingFee(){
   if(SERVER_LISTING_FEE) return SERVER_LISTING_FEE;
@@ -204,7 +262,8 @@ async function adminLogin(){
     input.value="";
     if(error)error.textContent="";
     checkAdminSession();
-    syncAdminDataToServer(loadAdminData()).then(ok=>{if(ok)console.log('Existing admin content synced to shared storage.');});
+    const shared=await loadSharedAdminDataForLogin();
+    if(shared) renderAdminManagedListings();
     showAdminPage(location.hash.slice(1)||"overview");
   }catch(e){
     if(error)error.textContent=e.message||"Admin login failed.";
@@ -393,7 +452,10 @@ window.editTournament=function(id){const t=getTournamentForEdit(id),overlay=docu
 function renderTournamentAdminFees(){document.querySelectorAll("[data-admin-tournament-fee]").forEach(el=>{const id=el.dataset.adminTournamentFee,t=getTournamentForEdit(id);el.textContent=money(t.fee);});}
 function renderTournamentControls(){const box=document.getElementById("tournamentControlsList");if(!box)return;const d=loadAdminData(),items=[...Object.entries(tournamentDefaults()).map(([id,v])=>({id,...v})),...(d.tournaments||[])];const seen=new Set();box.innerHTML=items.filter(t=>{if(seen.has(t.id))return false;seen.add(t.id);return true}).map(t=>{const x=getTournamentForEdit(t.id);return `<div class="tournament-control-row"><div><b>${escapeAdminText(x.name||"Tournament")}</b><small>Entry ${money(x.fee)} • ${formatTournamentDate(x.date)} • ${Number(x.maxSlots||48)} slots</small></div><button type="button" class="mini" onclick="editTournament('${escapeAdminText(t.id)}')">Edit</button></div>`}).join("");}
 function loadAdminData(){try{return JSON.parse(localStorage.getItem(ADMIN_DATA_KEY)||'{"creators":[],"vendors":[],"players":[],"tournaments":[],"news":[],"payments":[],"reports":[],"siteSettings":{}}')}catch(e){return {creators:[],vendors:[],players:[],tournaments:[],news:[],payments:[],reports:[],siteSettings:{}}}}
-function saveAdminData(d){localStorage.setItem(ADMIN_DATA_KEY,JSON.stringify(d)); syncAdminDataToServer(d)}
+function saveAdminData(d){
+  localStorage.setItem(ADMIN_DATA_KEY,JSON.stringify(d));
+  syncAdminDataToServer(d);
+}
 function activateListing(btn){if(btn){btn.textContent="Active";btn.disabled=true;showToast("Listing activated.");}adminTouch()}
 function pinPlayer(btn){if(btn){btn.textContent="Pinned";btn.disabled=true;showToast("Player pinned for 24H.");}adminTouch()}
 function renderAdminNews(){const box=document.getElementById("adminNewsList");if(!box)return;const news=loadAdminData().news||[];box.innerHTML=news.length?news.map(n=>`<div class="admin-managed-item"><div><b>${escapeAdminText(n.name||"Untitled")}</b><p>${escapeAdminText(n.details||"")}</p></div><div class="admin-row-actions"><button type="button" class="mini" onclick="adminEditNews('${escapeAdminText(n.id)}')">Edit</button><button type="button" class="mini danger" onclick="adminRemoveNews('${escapeAdminText(n.id)}')">Remove</button></div></div>`).join(""):"<p class=\"admin-form-help\">No news published yet.</p>";}

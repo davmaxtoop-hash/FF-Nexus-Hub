@@ -140,8 +140,13 @@ app.get('/api/config',(req,res)=>res.json({listingFee:LISTING_FEE_NGN,paystackPu
 
 app.get('/api/public-content', requireDb, async (req,res)=>{
   try{
-    const rows=await sql`SELECT data FROM site_content WHERE id=1 LIMIT 1`;
-    res.json({data:rows[0]?.data||{}});
+    const rows=await sql`SELECT data,updated_at FROM site_content WHERE id=1 LIMIT 1`;
+    const row=rows[0];
+    res.json({
+      exists: !!row,
+      data: row?.data || {},
+      updatedAt: row?.updated_at || null
+    });
   }catch(e){ console.error(e); res.status(500).json({error:'Could not load shared website content.'}); }
 });
 
