@@ -153,7 +153,7 @@
 
 <section class="admin-section" id="applications" data-page="applications">
 
-<h1>Listing Applications</h1><p>Review Creator, Vendor and free Player applications before publishing.</p>
+<h1>Listing Applications</h1><p>Paid Creator/Vendor applications are published automatically after Paystack confirms payment. This page keeps the payment time, payer and reference for review/audit. Free Player applications still require manual review.</p>
 <div id="adminApplicationsList"></div>
 </section>
 
@@ -163,7 +163,7 @@
 
 <div id="toast"></div>
 
-<script src="script.js?v=admin-login-fix-20260911-r5"></script>
+<script src="script.js?v=admin-login-fix-20260911-r6"></script>
 
 <script>
 (function(){
@@ -176,7 +176,7 @@
     const box=document.getElementById("adminApplicationsList");if(!box)return;
     let items=[];try{items=await serverApps()}catch(e){box.innerHTML='<p class="admin-form-help">'+esc(e.message||'Could not load applications.')+'</p>';return}
     if(!items.length){box.innerHTML='<p>No applications yet.</p>';return}
-    box.innerHTML=items.map(x=>`<div class="admin-application-card"><div class="admin-app-head"><b>${esc(x.type).toUpperCase()} — ${esc(x.name)}</b><span>${esc(x.status)}</span></div><p>${x.uid?'UID: '+esc(x.uid)+' • ':''}${x.phone?'Phone: '+esc(x.phone):''}</p><p>${esc(x.details||x.payload?.details||'')}</p>${x.type!=='player'?`<p><b>Payment:</b> ${esc(x.paymentMethod?.provider||x.payload?.paymentMethod?.provider||'')} — ${esc(x.paymentMethod?.account||x.payload?.paymentMethod?.account||'')} — <b>Amount: ₦${Number(x.payment_amount??x.paymentAmount??0).toLocaleString("en-NG")}</b> — Ref: ${esc(x.payment_ref||x.paymentRef||'')}</p>`:`<p><b>Payment:</b> Free Player Registration</p>`}${(x.image||x.payload?.image)?`<img src="${x.image||x.payload.image}" class="admin-app-image">`:''}${x.payment_proof||x.paymentProof?`<a href="${x.payment_proof||x.paymentProof}" target="_blank">View payment proof</a>`:''}<div class="admin-app-actions"><button type="button" onclick="approvePublicApplication('${esc(x.id)}')">Approve & Publish</button><button type="button" onclick="rejectPublicApplication('${esc(x.id)}')">Reject</button></div></div>`).join('');
+    box.innerHTML=items.map(x=>{const paid=x.type!=='player'&&String(x.status||'').toLowerCase()==='approved'&&String(x.payment_ref||x.payment_reference||'');const payer=x.payload?.email||x.email||'';const when=x.reviewed_at||x.created_at;return `<div class="admin-application-card"><div class="admin-app-head"><b>${esc(x.type).toUpperCase()} — ${esc(x.name)}</b><span>${esc(x.status)}</span></div><p>${x.uid?'UID: '+esc(x.uid)+' • ':''}${x.phone?'Phone: '+esc(x.phone):''}</p><p>${esc(x.details||x.payload?.details||'')}</p>${x.type!=='player'?`<p><b>Payment:</b> ${esc(x.paymentMethod?.provider||x.payload?.paymentMethod?.provider||'Paystack')} — <b>Amount: ₦${Number(x.payment_amount??x.paymentAmount??0).toLocaleString("en-NG")}</b> — Ref: ${esc(x.payment_ref||x.payment_reference||x.paymentRef||'')}</p>${payer?`<p><b>Paid by:</b> ${esc(payer)}</p>`:''}${when?`<p><b>Payment/Review time:</b> ${esc(new Date(when).toLocaleString('en-NG'))}</p>`:''}`:`<p><b>Payment:</b> Free Player Registration</p>`}${(x.image||x.payload?.image)?`<img src="${x.image||x.payload.image}" class="admin-app-image">`:''}${x.payment_proof||x.paymentProof?`<a href="${x.payment_proof||x.paymentProof}" target="_blank">View payment proof</a>`:''}${paid?`<div class="admin-app-actions"><span class="admin-form-help">✓ Payment confirmed — published automatically. No review required.</span></div>`:`<div class="admin-app-actions"><button type="button" onclick="approvePublicApplication('${esc(x.id)}')">Approve & Publish</button><button type="button" onclick="rejectPublicApplication('${esc(x.id)}')">Reject</button></div>`}</div>`}).join('');
   }
   async function review(id,action){
     try{await adminApi('/api/admin/applications/'+encodeURIComponent(id)+'/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action})});await renderApplications();if(typeof showToast==='function')showToast(action==='approve'?'Application approved and published.':'Application rejected.');return;}catch(e){if(/Admin session|login required|authentication/i.test(String(e.message||'')))return;}

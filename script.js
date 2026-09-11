@@ -590,6 +590,25 @@ function openPublicProfile(item){
   overlay.addEventListener('click',e=>{if(e.target===overlay)root.innerHTML=''});
 }
 
+function applyDirectoryLimit(type){
+  const grid=type==='creators'?document.getElementById('creatorGrid'):document.getElementById('vendorGrid');
+  if(!grid)return;
+  const cards=Array.from(grid.children).filter(el=>el.matches('.profile-card,.vendor-card'));
+  const btn=document.getElementById(type==='creators'?'viewAllCreatorsBtn':'viewAllVendorsBtn');
+  const expanded=grid.dataset.expanded==='true';
+  cards.forEach((card,i)=>card.classList.toggle('directory-card-hidden',!expanded && i>=3));
+  if(btn){
+    if(cards.length<=3){btn.style.display='none';}
+    else{btn.style.display='inline-block';btn.textContent=expanded?(type==='creators'?'Show Less Creators':'Show Less Vendors'):(type==='creators'?'View All Creators':'View All Vendors');btn.classList.toggle('active',expanded);}
+  }
+}
+function toggleDirectory(type){
+  const grid=type==='creators'?document.getElementById('creatorGrid'):document.getElementById('vendorGrid');
+  if(!grid)return;
+  grid.dataset.expanded=grid.dataset.expanded==='true'?'false':'true';
+  applyDirectoryLimit(type);
+}
+
 function renderAdminContentOnPublicSite(){
   if(document.getElementById("adminApp")) return;
   let d;
@@ -620,6 +639,7 @@ function renderAdminContentOnPublicSite(){
       card.querySelector('.profile-actions button').onclick=()=>openPublicProfile({type:'creator',name:item.name||'Creator',uid:item.uid||'',ign:item.ign||'',details:item.details||'',platform:item.platform||'',category:item.category||'',social:item.social||'',status:item.status||'Pending',verified:item.status==='Approved',image});
       creatorGrid.appendChild(card);
     });
+    applyDirectoryLimit('creators');
   }
 
   // Added vendors appear in the existing Vendor Directory.
@@ -634,6 +654,7 @@ function renderAdminContentOnPublicSite(){
       card.querySelector('.btn.small').onclick=()=>openPublicProfile({type:'vendor',name:item.name||'Vendor',contact:item.contact||'',phone:item.phone||'',whatsapp:item.whatsapp||'',category:item.category||'',location:item.location||'',details:item.details||'',social:item.social||'',status:item.status||'Pending',verified:item.status==='Approved',image});
       vendorGrid.appendChild(card);
     });
+    applyDirectoryLimit('vendors');
   }
 
   // Added tournaments appear in the existing Tournament Hub.

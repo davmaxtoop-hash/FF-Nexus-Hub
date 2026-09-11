@@ -292,7 +292,25 @@ async function finalizePaystackPayment(reference){
     await sql`UPDATE listing_applications SET status='Payment Failed' WHERE id=${appRow.id}`;
     return {found:true,paid:false,tx};
   }
-  await sql`UPDATE listing_applications SET status='Paid - Pending Review',payment_ref=${reference},payment_reference=${reference},reviewed_at=NULL WHERE id=${appRow.id}`;
+  // A successful Paystack payment is the approval for paid Creator/Vendor listings.
+  // Keep the application in the admin Applications/Review page for audit history,
+  // but publish it immediately without requiring a manual Approve & Publish action.
+  const approvedAt = new Date();
+  await sql`UPDATE listing_applications SET status='Approved',payment_ref=${reference},payment_reference=${reference},reviewed_at=NOW() WHERE id=${appRow.id}`;
+
+  if(appRow.type==='creator' || appRow.type==='vendor'){
+    const contentRows=await sql`SELECT data FROM site_content WHERE id=1 LIMIT 1`;
+    const content=contentRows[0]?.data && typeof contentRows[0].data==='object' ? contentRows[0].data : {};
+    const target=appRow.type==='creator'?'creators':'vendors';
+    const list=Array.isArray(content[target]) ? content[target].slice() : [];
+    const payload=appRow.payload && typeof appRow.payload==='object' ? appRow.payload : {};
+    const published={...payload,id:appRow.id,name:appRow.name,uid:appRow.uid||payload.uid||'',status:'Approved',paymentStatus:'Paid',paymentReference:reference,paymentAmount:Number(appRow.payment_amount||0),paymentConfirmedAt:approvedAt.toISOString(),createdAt:appRow.created_at};
+    const existingIndex=list.findIndex(x=>String(x?.id)===String(appRow.id));
+    if(existingIndex>=0) list[existingIndex]=published; else list.unshift(published);
+    content[target]=list;
+    await sql`INSERT INTO site_content (id,data,updated_at) VALUES (1,${content},NOW())
+      ON CONFLICT (id) DO UPDATE SET data=EXCLUDED.data,updated_at=NOW()`;
+  }
   return {found:true,paid:true,tx};
 }
 

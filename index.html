@@ -69,12 +69,12 @@
 <section id="creators" class="section">
   <div class="section-head"><div><span class="eyebrow">DISCOVER</span><h2>Creator Directory</h2><button class="btn primary listing-apply-btn" type="button" onclick="openListingApplication('creator')">Apply as Creator</button></div><input id="globalSearch" class="search" oninput="filterAll()" placeholder="Search creators, vendors, tournaments..."></div>
   <div class="filter-row"><button class="chip active" onclick="filterCreators('all',this)">All</button><button class="chip" onclick="filterCreators('verified',this)">Verified</button><button class="chip" onclick="filterCreators('popular',this)">Popular</button><button class="chip" onclick="filterCreators('featured',this)">Featured</button></div>
-  <div id="creatorGrid" class="grid"></div>
+  <div id="creatorGrid" class="grid"></div><div class="directory-more"><button id="viewAllCreatorsBtn" class="btn ghost" type="button" onclick="toggleDirectory('creators')">View All Creators</button></div>
 </section>
 
 <section id="vendors" class="section alt">
   <div class="section-head"><div><span class="eyebrow">SHOP SMART</span><h2>Vendor Directory</h2><button class="btn primary listing-apply-btn" type="button" onclick="openListingApplication('vendor')">Apply as Vendor</button></div></div>
-  <div class="grid" id="vendorGrid"></div>
+  <div class="grid" id="vendorGrid"></div><div class="directory-more"><button id="viewAllVendorsBtn" class="btn ghost" type="button" onclick="toggleDirectory('vendors')">View All Vendors</button></div>
   <p class="notice">Verification means the listing has been reviewed by the platform; it does not guarantee a transaction or product.</p>
 </section>
 
