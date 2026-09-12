@@ -35,20 +35,20 @@ app.set('trust proxy', 1);
 
 app.use(express.json({ limit: '8mb', verify: (req,res,buf)=>{ req.rawBody=buf; } }));
 
-// Serve the project from the same directory Railway starts Node from.
-// These explicit routes make the deployment work even when a browser opens
-// the common aliases without a trailing slash.
-app.use(express.static(__dirname, { extensions: ['html'] }));
+// MAX SHOP routes are intentionally declared BEFORE the static middleware.
+// This prevents Express' directory handling from issuing redirects for
+// /max-shop and /max-shop/store, which can cause ERR_TOO_MANY_REDIRECTS on
+// some Railway/proxy/browser combinations. Both slash and no-slash forms
+// serve the requested file directly.
+app.get(['/max-shop','/max-shop/'], (req,res)=>
+  res.sendFile(path.join(__dirname,'max-shop','max-introduction.html'))
+);
+app.get(['/max-shop/store','/max-shop/store/','/max-shop/store/index.html'], (req,res)=>
+  res.sendFile(path.join(__dirname,'max-shop','max-index.html'))
+);
 
-app.get('/', (req,res)=>res.sendFile(path.join(__dirname,'index.html')));
-app.get('/admin', (req,res)=>res.sendFile(path.join(__dirname,'admin.html')));
-app.get('/admin/', (req,res)=>res.sendFile(path.join(__dirname,'admin.html')));
-app.get('/admin.html', (req,res)=>res.sendFile(path.join(__dirname,'admin.html')));
-
-// MAX SHOP public entry + private admin entry.
-// The public /max-shop/ route is an introduction page. The actual store is
-// under /max-shop/store/. The admin page has no public link and uses a
-// configurable non-obvious path; authentication is still required.
+// The admin page has no public link and uses a configurable non-obvious path;
+// authentication is still required by the MAX SHOP admin page.
 const MAXSHOP_ADMIN_PATH = normalizeRouteSegment(process.env.MAXSHOP_ADMIN_PATH || 'secure-portal-7k4m');
 
 function normalizeRouteSegment(value){
@@ -57,18 +57,22 @@ function normalizeRouteSegment(value){
   return s || 'secure-portal-7k4m';
 }
 
-app.get('/max-shop', (req,res)=>res.redirect(301, '/max-shop/'));
-app.get('/max-shop/', (req,res)=>res.sendFile(path.join(__dirname,'max-shop','max-introduction.html')));
-app.get('/max-shop/store', (req,res)=>res.redirect(301, '/max-shop/store/'));
-app.get('/max-shop/store/', (req,res)=>res.sendFile(path.join(__dirname,'max-shop','max-index.html')));
-app.get('/max-shop/store/index.html', (req,res)=>res.sendFile(path.join(__dirname,'max-shop','max-index.html')));
-
 // Deliberately do not expose the old predictable admin URLs.
 app.get(['/max-shop/admin','/max-shop/admin/','/max-shop/admin.html','/max-shop/max-admin.html'],
   (req,res)=>res.status(404).send('Not found'));
 
-app.get(`/max-shop/${MAXSHOP_ADMIN_PATH}`, (req,res)=>res.redirect(301, `/max-shop/${MAXSHOP_ADMIN_PATH}/`));
-app.get(`/max-shop/${MAXSHOP_ADMIN_PATH}/`, (req,res)=>res.sendFile(path.join(__dirname,'max-shop','max-admin.html')));
+app.get([`/max-shop/${MAXSHOP_ADMIN_PATH}`, `/max-shop/${MAXSHOP_ADMIN_PATH}/`], (req,res)=>
+  res.sendFile(path.join(__dirname,'max-shop','max-admin.html'))
+);
+
+// Serve the project from the same directory Railway starts Node from.
+// Keep index.html as the Nexus Hub homepage; MAX SHOP has its own filenames.
+app.use(express.static(__dirname, { extensions: ['html'] }));
+
+app.get('/', (req,res)=>res.sendFile(path.join(__dirname,'index.html')));
+app.get('/admin', (req,res)=>res.sendFile(path.join(__dirname,'admin.html')));
+app.get('/admin/', (req,res)=>res.sendFile(path.join(__dirname,'admin.html')));
+app.get('/admin.html', (req,res)=>res.sendFile(path.join(__dirname,'admin.html')));
 
 
 let sql = null;
