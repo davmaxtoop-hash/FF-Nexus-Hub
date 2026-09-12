@@ -1,19 +1,28 @@
-FF NEXUS HUB + MAX SHOP
-=========================
+FF NEXUS HUB + MAX SHOP — FINAL INTEGRATED BUILD
+
+After unzipping, open the FF_NEXUS_HUB folder. Everything needed for the project is inside.
 
 PUBLIC FLOW
-1. FF Nexus Hub remains the main index.html.
-2. Top Up Centre opens MAX SHOP introduction.
-3. Enter MAX SHOP opens max-shop/max-index.html.
-4. MAX SHOP is a separate module inside the same project.
+Nexus Hub -> Top Up Centre -> MAX SHOP introduction -> Open MAX SHOP -> MAX SHOP
+The public MAX SHOP is embedded directly into the Nexus Hub page. It does not navigate to
+/max-shop/ and does not depend on a separate MAX SHOP URL.
 
-MAX SHOP ADMIN
-- Separate page: max-shop/max-admin.html
-- It is not linked from the public navigation.
-- It is intended to control MAX SHOP only.
-- Configure MAXSHOP_ADMIN_PASSWORD in Railway/server environment when using server authentication.
+ADMIN
+MAX SHOP admin is separate from Nexus Hub admin. It is not linked from the public site and
+is intended to control MAX SHOP only. Set MAXSHOP_ADMIN_PASSWORD in Railway.
 
-IMPORTANT
-Upload the contents of this folder to the ROOT of the existing GitHub repository.
-Do not rename the Nexus Hub index.html.
-Do not create another max-shop/index.html.
+PROJECT ROOT
+index.html
+admin.html
+server.js
+package.json
+railway.json
+Dockerfile
+script.js
+style.css
+assets/
+max-shop/max-introduction.html
+max-shop/max-index.html
+max-shop/max-admin.html
+
+Do not add max-shop/index.html.
