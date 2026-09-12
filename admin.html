@@ -1,202 +1,224 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MAX SHOP Admin</title>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FF Nexus Hub | Admin</title>
+<link rel="stylesheet" href="style.css">
 <style>
-*{box-sizing:border-box}body{margin:0;background:#08090d;color:#f5f7fb;font-family:Inter,Arial,sans-serif}
-header{border-bottom:1px solid #272b35;padding:16px 20px}.bar{max-width:1150px;margin:auto;display:flex;justify-content:space-between;align-items:center}
-.logo{font-weight:950;font-size:23px}.logo span{color:#ffb300}.wrap{max-width:1150px;margin:auto;padding:30px 20px}
-.panel{background:#11131a;border:1px solid #282c37;border-radius:18px;padding:22px;margin-bottom:18px}
-.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}.tab{background:#171a22;color:white;border:1px solid #303440;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:800}.tab.active{background:#ffb300;color:#111;border-color:#ffb300}
-.formgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}.field label{display:block;color:#aeb4c1;font-size:12px;margin-bottom:6px}.field input,.field textarea{width:100%;padding:12px;border-radius:10px;border:1px solid #303440;background:#090b10;color:#fff}.field textarea{min-height:90px;resize:vertical}
-.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:850;cursor:pointer}.gold{background:#ffb300;color:#111}.red{background:#35151a;color:#ff9ba4}.dark{background:#1a1d25;color:#fff;border:1px solid #303440}
-.row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid #252933}.row:last-child{border:0}.actions{display:flex;gap:7px;flex-wrap:wrap}.pill{font-size:11px;padding:4px 8px;border-radius:99px;background:#193b2c;color:#75e6ad}.off{background:#332a16;color:#ffd56b}
-.preview{width:70px;height:55px;object-fit:cover;border-radius:8px;background:#222}.notice{background:#201a0c;border:1px solid #59430f;color:#e7c879;padding:13px;border-radius:10px;font-size:13px;line-height:1.5}
-.login{max-width:420px;margin:100px auto}.hidden{display:none}
-.modal{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;padding:18px;z-index:50}.modal.open{display:flex}
-.modalbox{width:min(560px,100%);max-height:92vh;overflow:auto;background:#11131a;border:1px solid #353946;border-radius:20px;padding:23px}
-.modalhead{display:flex;justify-content:space-between;align-items:center}.close{border:0;background:none;color:#fff;font-size:28px;cursor:pointer}
-.upload{border:2px dashed #424754;border-radius:15px;padding:20px;text-align:center;margin:14px 0;background:#0b0d12}.upload.drag{border-color:#ffb300;background:#181308}
-.upload label{display:inline-block;background:#ffb300;color:#111;padding:12px 16px;border-radius:10px;font-weight:900;cursor:pointer}.upload input{display:none}
-.image-preview{display:none;width:100%;max-height:260px;object-fit:contain;border-radius:12px;margin-top:15px;background:#07080b}.image-preview.show{display:block}.upload-name{font-size:12px;color:#aeb4c1;margin-top:9px}
-.help{font-size:12px;color:#9198a7;line-height:1.5}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
-@media(max-width:700px){.formgrid{grid-template-columns:1fr}.row{align-items:flex-start;flex-direction:column}.modalbox{padding:17px}}
+/* Admin-only behavior. Public website CSS/layout is untouched. */
+.admin-section { display:none; }
+.admin-section.admin-current { display:block; }
+.admin-section .back-dashboard {
+  display:inline-block; margin-bottom:18px; color:#8fa1c9; text-decoration:none;
+  font-size:13px;
+}
+.admin-section .back-dashboard:hover { color:#fff; }
 </style>
-</head>
-<body>
-<header><div class="bar"><div class="logo">MAX <span>SHOP</span> ADMIN</div><a class="btn dark" href="index.html">View Shop</a></div></header>
+<style>
+.admin-form-overlay{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:18px;box-sizing:border-box}
+.admin-form-card{width:min(560px,100%);max-height:92vh;overflow:auto;background:#151515;border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:22px;box-sizing:border-box;box-shadow:0 20px 70px rgba(0,0,0,.55)}
+.admin-form-card h2{margin:0 0 8px}.admin-form-help{opacity:.72;font-size:13px;margin:0 0 16px}.admin-form-card label{display:block;margin:12px 0;font-size:13px;font-weight:700}.admin-form-card input,.admin-form-card textarea,.admin-form-card select{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:11px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:#101010;color:inherit;font:inherit}.admin-form-card textarea{min-height:90px;resize:vertical}.admin-form-close{float:right;border:0;background:transparent;color:inherit;font-size:28px;line-height:1;cursor:pointer}.admin-upload-preview{min-height:100px;margin:8px 0 16px;border:1px dashed rgba(255,255,255,.2);border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;opacity:.75;overflow:hidden}.admin-upload-preview img{max-width:100%;max-height:180px;object-fit:contain}.admin-table-image{width:38px;height:38px;border-radius:8px;object-fit:cover;vertical-align:middle;margin-right:8px}
+</style><style>
+.ranking-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.ranking-place{border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px}.ranking-place h3{margin-top:0}.ranking-history-item{border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px;margin:10px 0}.ranking-history-item h3{margin:0 0 8px}.ranking-history-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.ranking-history-card{padding:10px;border-radius:10px;background:rgba(255,255,255,.04)}.ranking-history-card img{width:42px;height:42px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:8px}@media(max-width:800px){.ranking-form-grid{grid-template-columns:1fr}.ranking-history-row{grid-template-columns:1fr}}
+</style>
+<style>
+.payment-method-manager{margin-top:22px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1)}
+.payment-method-manager h3{margin:0 0 6px}
+.payment-method-row{display:grid;grid-template-columns:1fr 1.2fr 1.2fr auto auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.payment-method-row input{min-width:0;padding:9px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:#101010;color:inherit}
+.payment-method-row .default-badge{font-size:11px;opacity:.75}
+.payment-method-add{display:grid;grid-template-columns:1fr 1.2fr 1.2fr auto;gap:8px;margin-top:12px}
+.payment-method-add input{min-width:0;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:#101010;color:inherit}
+@media(max-width:800px){.payment-method-row,.payment-method-add{grid-template-columns:1fr}.payment-method-row button{width:100%}}
+</style>
+<style>.payment-method-history-list{display:grid;gap:8px}.payment-method-history{display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:9px}.payment-method-history span{opacity:.8}</style></head>
+<body class="admin-body">
 
-<div id="login" class="panel login">
-<h2>Admin Login</h2><p style="color:#9da3b3">Use the MAX SHOP admin password configured in Railway as <b>MAXSHOP_ADMIN_PASSWORD</b>.</p>
-<input id="pass" type="password" placeholder="Admin password" style="width:100%;padding:12px;background:#090b10;color:#fff;border:1px solid #303440;border-radius:10px">
-<br><br><button class="btn gold" onclick="login()">Enter Dashboard</button>
-</div>
-
-<div id="app" class="wrap hidden">
-<div class="notice">MAX SHOP admin is server-backed. Changes are stored in the shared database and appear on the public shop for every visitor. Keep your admin password private.</div>
-<div class="tabs">
-<button class="tab active" onclick="show('settings',this)">⚙️ Store Settings</button>
-<button class="tab" onclick="show('topups',this)">💎 Diamond Prices</button>
-<button class="tab" onclick="show('accounts',this)">👤 Accounts</button><button class="tab" onclick="show('orders',this)">📦 Diamond Orders <span id="orderCount" class="pill">0</span></button><button class="tab" onclick="show('reviews',this)">⭐ Reviews</button>
-<button class="tab" onclick="show('backup',this)">💾 Backup</button>
-</div>
-
-<section id="settings" class="panel"><h2>Store Settings</h2><div class="formgrid">
-<div class="field"><label>Website name</label><input id="sname"></div>
-<div class="field"><label>WhatsApp number (country code)</label><input id="swa"></div><div class="field"><label>Support email</label><input id="semail" type="email"></div>
-<div class="field"><label>Currency symbol</label><input id="scur"></div>
-<div class="field"><label>Homepage text</label><textarea id="shero"></textarea></div><div class="field"><label>Payment information shown after Player ID</label><textarea id="spay" placeholder="Bank name, account number, account name, etc."></textarea></div>
-</div><br><button class="btn gold" onclick="saveSettings()">Save Settings</button></section>
-
-<section id="topups" class="panel hidden"><div style="display:flex;justify-content:space-between;align-items:center"><h2>Diamond Packages</h2><button class="btn gold" onclick="newTopup()">+ Add Package</button></div><div id="topupList"></div></section>
-
-<section id="accounts" class="panel hidden">
-<div style="display:flex;justify-content:space-between;align-items:center"><h2>Accounts For Sale</h2><button class="btn gold" onclick="newAccount()">+ Add Account</button></div>
-<p style="color:#9da3b3;font-size:13px">Add account pictures directly from your device. No image URL is required.</p>
-<div id="accountList"></div>
-</section>
-
-
-<section id="orders" class="panel hidden">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-    <div><h2>📦 Diamond Orders</h2><p style="color:#9da3b3">Customers who selected a diamond package and submitted their Player ID.</p></div>
-    <button class="btn dark" onclick="renderOrdersReviews()">Refresh</button>
+<div id="loginScreen" class="login-screen">
+  <div class="login-box glass">
+    <div class="brand"><span>FF</span> NEXUS HUB</div>
+    <h1>Admin Panel</h1>
+    <p>Administrator access</p>
+    <input id="adminPassword" type="password" placeholder="Admin password">
+    <button class="btn primary full" onclick="adminLogin()">Login</button>
+    <small>Admin password is configured securely in the server environment (<code>ADMIN_PASSWORD</code>).</small>
+    <div id="loginError"></div>
   </div>
-  <div id="ordersList"></div>
-</section>
+</div>
 
-<section id="reviews" class="panel hidden">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-    <div><h2>⭐ Customer Reviews</h2><p style="color:#9da3b3">Manage reviews submitted by customers.</p></div>
-    <button class="btn dark" onclick="renderOrdersReviews()">Refresh</button>
+<div id="adminApp" class="admin-app hidden">
+<header class="admin-top">
+  <div class="brand"><span>FF</span> NEXUS HUB <em>ADMIN</em></div>
+  <button class="btn small" onclick="adminLogout()">Logout</button>
+</header>
+
+<div class="admin-layout">
+<aside>
+<a class="side" href="#overview" data-admin-page="overview">Overview</a>
+<a class="side" href="#creators" data-admin-page="creators">Creators</a>
+<a class="side" href="#vendors" data-admin-page="vendors">Vendors</a>
+<a class="side" href="#players" data-admin-page="players">Players</a>
+<a class="side" href="#leaderboard-admin" data-admin-page="leaderboard-admin">Leaderboard</a>
+<a class="side" href="#tournaments" data-admin-page="tournaments">Tournaments</a>
+<a class="side" href="#tournament-registrations" data-admin-page="tournament-registrations">Tournament Registrations</a>
+<a class="side" href="#news" data-admin-page="news">News</a>
+<a class="side" href="#payments" data-admin-page="payments">Payments</a>
+<a class="side" href="#reports" data-admin-page="reports">Reports</a>
+<a class="side" href="#settings" data-admin-page="settings">Settings</a>
+<a class="side" href="#admin-settings" data-admin-page="admin-settings">Admin Settings</a>
+<a class="side" href="#monthly-rankings" data-admin-page="monthly-rankings">Monthly Rankings</a>
+<a class="side" href="#applications" data-admin-page="applications">Applications</a>
+<a class="side" href="#support-reviews" data-admin-page="support-reviews">Support Reviews</a>
+</aside>
+<main class="dashboard">
+<section id="overview" class="admin-section"><div class="dash-head"><div><span class="eyebrow">CONTROL CENTER</span><h1>Dashboard Overview</h1></div><span class="status live">● SYSTEM ONLINE</span></div>
+<div class="metric-grid"><div class="metric"><small>Registered Players</small><b id="adminLivePlayerCount">0</b><span>Live from Neon database</span></div><div class="metric"><small>Creators</small><b id="adminCreatorCount">0</b><span>Published creator listings</span></div><div class="metric"><small>Vendors</small><b id="adminVendorCount">0</b><span>Published vendor listings</span></div><div class="metric"><small>Tournaments</small><b id="adminTournamentCount">0</b><span>Published tournaments</span></div></div>
+<div class="panel"><h2>Quick Actions</h2><div class="quick-grid"><button onclick="adminAdd('creators')">＋ Add Creator</button><button onclick="adminAdd('vendors')">＋ Add Vendor</button><button onclick="adminAdd('tournaments')">＋ Add Tournament</button><button onclick="publishNews()">＋ Publish News</button></div></div>
+</section>
+<section id="creators" class="admin-section"><div class="dash-head"><h2>Creators Management</h2><button class="btn primary small" onclick="adminAdd('creators')">+ Add Creator</button></div><div class="table-wrap"><table><thead><tr><th>Creator</th><th>UID</th><th>Plan</th><th>Status</th><th>Actions</th></tr></thead><tbody id="adminCreatorsTable"><tr><td colspan="4" class="admin-form-help">No creators added yet.</td></tr></tbody></table></div></section>
+<section id="vendors" class="admin-section"><div class="dash-head"><h2>Vendor Management</h2><button class="btn primary small" onclick="adminAdd('vendors')">+ Add Vendor</button></div><div class="table-wrap"><table><thead><tr><th>Vendor</th><th>Listing</th><th>Verification</th><th>Actions</th></tr></thead><tbody id="adminVendorsTable"><tr><td colspan="3" class="admin-form-help">No vendors added yet.</td></tr></tbody></table></div></section>
+<section id="players" class="admin-section"><div class="dash-head"><div><span class="eyebrow">PLAYER ACCOUNTS</span><h2>Registered Players</h2></div><button class="btn primary small" type="button" onclick="refreshAdminPlayers()">Refresh</button></div><div class="panel"><p class="admin-form-help">These are real player accounts registered through the website and stored in Neon.</p><div id="registeredPlayersList"><p class="admin-form-help">Loading registered players...</p></div></div><div class="dash-head"><h2>Teammate Finder Moderation</h2></div><div class="table-wrap"><table><tr><th>Player</th><th>UID</th><th>Style</th><th>Pin</th><th>Action</th></tr><tr><td>RUSH KING</td><td>555123444</td><td>Rush</td><td>No</td><td><button class="mini" onclick="pinPlayer(this)">Pin 24H</button></td></tr><tr><td>SAFE AIM</td><td>777888999</td><td>Passive</td><td>Yes</td><td><button class="mini" onclick="showToast('Player unpinned.')">Unpin</button></td></tr></table></div></section>
+<section id="leaderboard-admin" class="admin-section"><div class="dash-head"><div><span class="eyebrow">PLAYER RANKINGS</span><h2>Leaderboard Management</h2></div><button class="btn primary small" type="button" onclick="refreshAdminLeaderboard()">Refresh</button></div><div class="panel"><p class="admin-form-help">Update wins, points, tournament appearances and verification for registered players.</p><div id="adminLeaderboardList"><p>Loading leaderboard...</p></div></div></section>
+<section id="tournaments" class="admin-section"><div class="dash-head"><h2>Tournaments</h2><button class="btn primary small" onclick="adminAdd('tournaments')">+ Add Tournament</button></div><div class="table-wrap"><table><thead><tr><th>Tournament</th><th>Organizer</th><th>Fee</th><th>Status</th><th>Actions</th></tr></thead><tbody id="adminTournamentsTable"><tr><td colspan="4" class="admin-form-help">No tournaments added yet.</td></tr></tbody></table></div></section>
+<section id="news" class="admin-section"><div class="dash-head"><h2>News Publisher</h2><button class="btn primary small" onclick="publishNews()">+ New Article</button></div><div class="panel"><input id="newsTitle" placeholder="Article title"><textarea id="newsBody" placeholder="Write the update..."></textarea><button class="btn primary" onclick="publishNews()">Publish</button></div><div class="panel"><h3>Published News</h3><div id="adminNewsList"><p class="admin-form-help">No news published yet.</p></div></div></section>
+<section id="payments" class="admin-section"><div class="dash-head"><h2>Payments & Subscriptions</h2></div><div class="panel"><h3>Configured Payment Methods</h3><div id="adminPaymentMethodsList" class="payment-method-history-list"></div><p class="admin-form-help">Manage payment accounts from Admin Settings.</p></div><div class="panel"><p class="admin-form-help">No payment transactions yet. Creator and Vendor payment applications will appear here after users submit them.</p></div></section>
+<section id="reports" class="admin-section"><div class="dash-head"><h2>Reports & Moderation</h2></div><div class="report-list"><div><b>Report #104</b><span>Vendor — wrong information</span><button class="mini" onclick="showToast('Report marked reviewed.')">Review</button></div><div><b>Report #105</b><span>Player — spam post</span><button class="mini" onclick="showToast('Report marked reviewed.')">Review</button></div></div></section>
+<section id="settings" class="admin-section"><div class="dash-head"><h2>Platform Settings</h2></div><div class="panel settings"><label>Creator & Vendor listing fee <input value="₦10,000" readonly></label><label>Player registration <input value="FREE" readonly></label><label>Tournament pricing <input value="Managed per tournament in Admin Settings" readonly></label><label>Player accounts <input value="Neon database" readonly></label></div><p class="notice">These values reflect the current public website setup. Change the Creator/Vendor fee and tournament settings from Admin Settings.</p></section>
+
+<section id="admin-settings" class="admin-section">
+<div class="dash-head"><h2>Admin Settings</h2></div>
+<div class="panel settings">
+<label>Website name <input id="siteName" placeholder="FF Nexus Hub"></label>
+<label>Phone number <input id="sitePhone" placeholder="080..."></label>
+<label>Email <input id="siteEmail" type="email" placeholder="admin@example.com"></label>
+<label>WhatsApp <input id="siteWhatsApp" placeholder="234..."></label>
+<label>Website address <input id="siteAddress" placeholder="Lagos, Nigeria"></label>
+<label>Tagline <input id="siteTagline" placeholder="Your gaming community hub"></label>
+<label>Website description <textarea id="siteDescription" placeholder="Describe your website..."></textarea></label>
+<label>Creator & Vendor Listing Fee <input id="listingFee" inputmode="numeric" value="10000" placeholder="10000"></label>
+<label>Tournament WhatsApp Group Link <input id="tournamentGroupLink" type="url" placeholder="https://chat.whatsapp.com/..."></label>
+<div class="panel" style="margin-top:16px"><h3>Tournament Controls</h3><p class="admin-form-help">Edit the entry fee, prize, date and slots for each tournament. The changes appear on the main website automatically.</p><div id="tournamentControlsList"></div></div>
+<p class="admin-form-help">After a successful tournament registration, the Join WhatsApp Group button will use this link. Leave blank until you have a group link.</p>
+<p class="admin-form-help">This is the amount shown to Creator and Vendor applicants on the main website. Player registration remains free.</p>
+<label>Logo from your device <input id="siteLogo" type="file" accept="image/*"></label>
+<div id="siteLogoPreview" style="margin:8px 0"></div>
+
+<div class="support-settings-manager">
+  <h3>Support the Vision</h3>
+  <p class="admin-form-help">This is separate from Creator/Vendor reviews. Turn the support section on or off and customize what supporters see.</p>
+  <label>Show Support the Vision <select id="supportVisionEnabled"><option value="true">ON</option><option value="false">OFF</option></select></label>
+  <label>Support title <input id="supportVisionTitle" placeholder="Support the Vision 💙"></label>
+  <label>Support description <textarea id="supportVisionDescription" placeholder="If you like what we are building, support us with any amount you choose."></textarea></label>
+</div>
+
+<div class="social-links-manager">
+  <h3>Footer Social Links</h3>
+  <p class="admin-form-help">Add the TikTok and Instagram pages and up to 3 WhatsApp numbers. These appear as icons in the public website footer.</p>
+  <label>TikTok page link <input id="socialTikTok" type="url" placeholder="https://www.tiktok.com/@yourpage"></label>
+  <label>Instagram page link <input id="socialInstagram" type="url" placeholder="https://www.instagram.com/yourpage"></label>
+  <div class="whatsapp-links-editor">
+    <div class="social-manager-head"><strong>WhatsApp numbers</strong><span>Maximum 3</span></div>
+    <div id="socialWhatsAppList"></div>
+    <button class="btn small" type="button" onclick="addWhatsAppSocialField()">+ Add WhatsApp Number</button>
   </div>
-  <div id="adminReviewsList"></div>
-</section>
-<section id="backup" class="panel hidden"><h2>Backup & Restore</h2><p style="color:#9da3b3">Export your current listings before changing devices.</p>
-<button class="btn gold" onclick="exportData()">Export JSON</button>
-<button class="btn dark" onclick="document.getElementById('importFile').click()">Import JSON</button>
-<input id="importFile" type="file" accept=".json" hidden onchange="importData(event)">
-<br><br><button class="btn red" onclick="resetData()">Reset to demo data</button></section>
 </div>
 
-<div class="modal" id="accountModal">
-<div class="modalbox">
-<div class="modalhead"><h2 id="modalTitle">Add Account</h2><button class="close" onclick="closeAccount()">×</button></div>
-<div class="formgrid">
-<div class="field"><label>Account name</label><input id="aName" placeholder="e.g. Level 70 Account"></div>
-<div class="field"><label>Price</label><input id="aPrice" type="number" min="0" placeholder="50000"></div>
+<div class="payment-method-manager">
+  <h3>Payment Methods</h3>
+  <p class="admin-form-help">Add as many payment accounts as you need. You can edit, remove, or choose which one is the default payment method.</p>
+  <div id="paymentMethodsList"></div>
+  <div class="payment-method-add">
+    <input id="newPaymentProvider" placeholder="Provider (e.g. OPay, PalmPay, Bank)">
+    <input id="newPaymentAccount" placeholder="Account number / phone number">
+    <input id="newPaymentName" placeholder="Account name">
+    <button class="btn small" type="button" onclick="addPaymentMethod()">+ Add Payment Method</button>
+  </div>
+  <button class="btn small" type="button" onclick="savePaymentMethodEdits()" style="margin-top:10px">Save Payment Method Changes</button>
 </div>
-<div class="field" style="margin-top:13px"><label>Description</label><textarea id="aDesc" placeholder="Describe the account, skins, level, etc."></textarea></div>
-<div class="field" style="margin-top:13px"><label>Account Email / Login</label><input id="aEmail" placeholder="Account login email or username"></div>
-<div class="field" style="margin-top:13px"><label>Account Password</label><input id="aPassword" type="text" placeholder="Account password"></div>
-<div class="formgrid" style="margin-top:13px"><div class="field"><label>UID / ID (optional)</label><input id="aUid" placeholder="Player UID"></div><div class="field"><label>Delivery</label><select id="aDelivery"><option value="true">Enable automatic reveal</option><option value="false">Disable automatic reveal</option></select></div></div>
-<div class="upload" id="dropZone">
-<div style="font-size:42px">📷</div>
-<strong>Select account picture</strong>
-<p class="help">Choose a picture directly from your phone/computer. JPG, PNG, WEBP and other browser-supported images work.</p>
-<label for="imageFile">Choose Image</label>
-<input id="imageFile" type="file" accept="image/*">
-<img id="imagePreview" class="image-preview" alt="Selected account image">
-<div id="uploadName" class="upload-name">No image selected</div>
+
+<button class="btn primary" type="button" onclick="saveAdminWebsiteSettings()">Save Admin Settings</button>
+<p id="adminSettingsMessage" class="notice"></p>
 </div>
-<div class="modal-actions"><button class="btn dark" onclick="closeAccount()">Cancel</button><button class="btn gold" onclick="saveAccount()">Save Account</button></div>
-</div></div>
+</section>
+
+<section id="tournament-registrations" class="admin-section"><div class="dash-head"><div><span class="eyebrow">TOURNAMENTS</span><h2>Tournament Registrations</h2></div></div><div class="panel"><p class="admin-form-help">Players who register from the main website appear here with their in-game name, UID and WhatsApp number.</p><div id="tournamentRegistrationsList"><p class="admin-form-help">No tournament registrations yet.</p></div></div></section>
+
+<section id="monthly-rankings" class="admin-section">
+<div class="dash-head"><div><span class="eyebrow">END OF MONTH</span><h2>Monthly Rankings</h2></div></div>
+<div class="panel">
+  <p class="admin-form-help">At the end of every month, enter the Top 3 Creator and Top 3 Vendor. Choose the month, fill the positions, add an optional image, then save. Previous months are kept in the admin panel.</p>
+  <label>Ranking month <input id="rankingMonth" type="month"></label>
+</div>
+
+<div class="panel ranking-admin-panel">
+  <h2>🏆 Top Creator of the Month</h2>
+  <div class="ranking-form-grid">
+    <div class="ranking-place"><h3>🥇 1st Place</h3><label>Name<input id="creatorRank1Name" placeholder="Creator name"></label><label>UID<input id="creatorRank1Uid" placeholder="Free Fire UID"></label><label>Score / Points<input id="creatorRank1Score" placeholder="e.g. 950"></label><label>Profile picture<input id="creatorRank1Image" type="file" accept="image/*"></label><div id="creatorRank1Preview" class="admin-upload-preview">Optional image</div></div>
+    <div class="ranking-place"><h3>🥈 2nd Place</h3><label>Name<input id="creatorRank2Name" placeholder="Creator name"></label><label>UID<input id="creatorRank2Uid" placeholder="Free Fire UID"></label><label>Score / Points<input id="creatorRank2Score" placeholder="e.g. 870"></label><label>Profile picture<input id="creatorRank2Image" type="file" accept="image/*"></label><div id="creatorRank2Preview" class="admin-upload-preview">Optional image</div></div>
+    <div class="ranking-place"><h3>🥉 3rd Place</h3><label>Name<input id="creatorRank3Name" placeholder="Creator name"></label><label>UID<input id="creatorRank3Uid" placeholder="Free Fire UID"></label><label>Score / Points<input id="creatorRank3Score" placeholder="e.g. 810"></label><label>Profile picture<input id="creatorRank3Image" type="file" accept="image/*"></label><div id="creatorRank3Preview" class="admin-upload-preview">Optional image</div></div>
+  </div>
+</div>
+
+<div class="panel ranking-admin-panel">
+  <h2>🛒 Top Vendor of the Month</h2>
+  <div class="ranking-form-grid">
+    <div class="ranking-place"><h3>🥇 1st Place</h3><label>Vendor name<input id="vendorRank1Name" placeholder="Vendor name"></label><label>Category<input id="vendorRank1Category" placeholder="e.g. Top-up, Accessories"></label><label>Score / Points<input id="vendorRank1Score" placeholder="e.g. 980"></label><label>Business logo<input id="vendorRank1Image" type="file" accept="image/*"></label><div id="vendorRank1Preview" class="admin-upload-preview">Optional image</div></div>
+    <div class="ranking-place"><h3>🥈 2nd Place</h3><label>Vendor name<input id="vendorRank2Name" placeholder="Vendor name"></label><label>Category<input id="vendorRank2Category" placeholder="e.g. Top-up, Accessories"></label><label>Score / Points<input id="vendorRank2Score" placeholder="e.g. 900"></label><label>Business logo<input id="vendorRank2Image" type="file" accept="image/*"></label><div id="vendorRank2Preview" class="admin-upload-preview">Optional image</div></div>
+    <div class="ranking-place"><h3>🥉 3rd Place</h3><label>Vendor name<input id="vendorRank3Name" placeholder="Vendor name"></label><label>Category<input id="vendorRank3Category" placeholder="e.g. Top-up, Accessories"></label><label>Score / Points<input id="vendorRank3Score" placeholder="e.g. 820"></label><label>Business logo<input id="vendorRank3Image" type="file" accept="image/*"></label><div id="vendorRank3Preview" class="admin-upload-preview">Optional image</div></div>
+  </div>
+</div>
+
+<div class="panel"><button class="btn primary" type="button" onclick="saveMonthlyRankings()">Save Monthly Rankings</button><p id="rankingMessage" class="notice"></p></div>
+<div class="panel"><h2>Previous Monthly Winners</h2><div id="rankingHistory" class="ranking-history"><p class="admin-form-help">No monthly rankings saved yet.</p></div></div>
+</section>
+
+
+<section class="admin-section" id="applications" data-page="applications">
+
+<h1>Listing Applications</h1><p>Paid Creator/Vendor applications are published automatically after Paystack confirms payment. This page keeps the payment time, payer and reference for review/audit. Free Player applications still require manual review.</p>
+<div id="adminApplicationsList"></div>
+</section>
+
+<section class="admin-section" id="support-reviews" data-page="support-reviews">
+<div class="dash-head"><div><span class="eyebrow">SUPPORT THE VISION</span><h2>Support Reviews</h2></div><button class="btn primary small" type="button" onclick="refreshSupportReviews()">Refresh</button></div>
+<div class="panel"><p class="admin-form-help">Support payments are kept completely separate from Creator, Vendor and Player applications. Successful Paystack support payments appear here.</p><div id="supportReviewsList"><p class="admin-form-help">Loading support payments...</p></div></div>
+</section>
+
+</main>
+</div>
+</div>
+
+<div id="toast"></div>
+
+<script src="script.js?v=admin-login-fix-20260911-r6"></script>
 
 <script>
-const defaults={settings:{name:"MAX SHOP",hero:"Top-ups and gaming accounts in one place. Choose what you need and complete your order.",whatsapp:"08169897289",email:"maxdesignng@gmail.com",currency:"₦",paymentInfo:"Bank/Transfer details will appear here. Please pay only after checking your order details."},topups:[
-{id:1,name:"100 Diamonds",price:1000,active:true},{id:2,name:"310 Diamonds",price:3000,active:true},{id:3,name:"520 Diamonds",price:5000,active:true},{id:4,name:"1,060 Diamonds",price:10000,active:true},{id:5,name:"2,180 Diamonds",price:20000,active:true},{id:6,name:"5,600 Diamonds",price:50000,active:true},{id:7,name:"11,500 Diamonds",price:100000,active:true}],accounts:[],orders:[],reviews:[]};
-
-let D=null, editingIndex=-1, selectedImage="";
-
-function clone(x){return JSON.parse(JSON.stringify(x))}
-async function get(){
-  const token=sessionStorage.getItem("maxshop_admin_token");
-  const r=await fetch("/api/maxshop/data",{cache:"no-store"});
-  if(!r.ok) throw new Error("Could not load MAX SHOP data.");
-  const j=await r.json(); const d=j.data||clone(defaults);
-  d.settings=Object.assign({},defaults.settings,d.settings||{}); d.topups=Array.isArray(d.topups)?d.topups:clone(defaults.topups); d.accounts=Array.isArray(d.accounts)?d.accounts:[]; d.reviews=Array.isArray(d.reviews)?d.reviews:[]; d.orders=[]; return d;
-}
-async function put(){
-  const token=sessionStorage.getItem("maxshop_admin_token");
-  if(!token){alert("Please log in again.");return;}
-  const r=await fetch("/api/maxshop/admin/data",{method:"PUT",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({data:D})});
-  const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error(j.error||"Could not save MAX SHOP data."); render();
-}
-async function login(){
-  const pass=document.getElementById("pass").value; const btn=document.querySelector("#login button"); if(btn)btn.disabled=true;
-  try{const r=await fetch("/api/maxshop/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:pass})}); const j=await r.json(); if(!r.ok)throw new Error(j.error||"Login failed."); sessionStorage.setItem("maxshop_admin_token",j.token); D=await get(); loginEl.classList.add("hidden"); app.classList.remove("hidden"); render(); await renderOrdersReviews();}catch(e){alert(e.message||"Login failed.");}finally{if(btn)btn.disabled=false;}
-}
-function show(id,b){document.querySelectorAll("#app section").forEach(x=>x.classList.add("hidden"));document.getElementById(id).classList.remove("hidden");document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active")}
-async function saveSettings(){D.settings.name=sname.value||"MAX SHOP";D.settings.whatsapp=swa.value.replace(/\D/g,"");D.settings.email=document.getElementById("semail").value.trim();D.settings.currency=scur.value||"₦";D.settings.hero=shero.value;D.settings.paymentInfo=document.getElementById("spay").value||"";try{await put();alert("Settings saved to the server.")}catch(e){alert(e.message)}}
-function renderBase(){
-if(!D)return;
-sname.value=D.settings.name;swa.value=D.settings.whatsapp;if(document.getElementById("semail"))document.getElementById("semail").value=D.settings.email||"";scur.value=D.settings.currency;shero.value=D.settings.hero;if(document.getElementById("spay"))document.getElementById("spay").value=D.settings.paymentInfo||"";
-topupList.innerHTML=D.topups.map((x,i)=>`<div class="row"><div><b>${esc(x.name)}</b><br><span style="color:#ffc247">${esc(D.settings.currency)}${Number(x.price).toLocaleString()}</span> <span class="pill ${x.active?'':'off'}">${x.active?'Visible':'Hidden'}</span></div><div class="actions"><button class="btn dark" onclick="editTop(${i})">Edit</button><button class="btn dark" onclick="toggleTop(${i})">${x.active?'Hide':'Show'}</button><button class="btn red" onclick="delTop(${i})">Delete</button></div></div>`).join("")||"<p>No packages.</p>";
-accountList.innerHTML=D.accounts.map((x,i)=>`<div class="row"><div style="display:flex;gap:12px;align-items:center">${x.image?`<img class="preview" src="${x.image}" alt="">`:`<div class="preview">🎮</div>`}<div><b>${esc(x.name)}</b><br><span style="color:#ffc247">${esc(D.settings.currency)}${Number(x.price).toLocaleString()}</span> <span class="pill ${x.active?'':'off'}">${x.active?'Visible':'Hidden'}</span> <span class="pill ${x.sold?'off':''}">${x.sold?'SOLD':'Available'}</span><br><span class="muted small">Delivery: ${x.deliveryEnabled===false?'Off':'On'} • Credentials: ${x.email||x.password?'Saved':'Not set'}</span></div></div><div class="actions"><button class="btn dark" onclick="editAccount(${i})">Edit / Control</button><button class="btn dark" onclick="toggleAcc(${i})">${x.active?'Hide':'Show'}</button><button class="btn dark" onclick="toggleSold(${i})">${x.sold?'Mark Available':'Mark Sold'}</button><button class="btn red" onclick="delAcc(${i})">Delete</button></div></div>`).join("")||"<p>No accounts yet. Click + Add Account.</p>";
-}
-function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
-
-async function newTopup(){let n=prompt("Package name:","New Diamonds");if(!n)return;let p=prompt("Price:","1000");if(p===null)return;D.topups.push({id:Date.now(),name:n,price:Number(p)||0,active:true});try{await put()}catch(e){alert(e.message)}}
-async function editTop(i){let x=D.topups[i],n=prompt("Package name:",x.name);if(n===null)return;let p=prompt("Price:",x.price);if(p===null)return;x.name=n;x.price=Number(p)||0;try{await put()}catch(e){alert(e.message)}}
-async function toggleTop(i){D.topups[i].active=!D.topups[i].active;try{await put()}catch(e){alert(e.message)}}
-async function delTop(i){if(confirm("Delete this package?")){D.topups.splice(i,1);try{await put()}catch(e){alert(e.message)}}}
-
-function newAccount(){editingIndex=-1;openAccount({name:"",description:"",price:"",image:""})}
-function editAccount(i){editingIndex=i;openAccount(D.accounts[i])}
-function openAccount(x){
-aName.value=x.name||"";aPrice.value=x.price??"";aDesc.value=x.description||"";aEmail.value=x.email||"";aPassword.value=x.password||"";aUid.value=x.uid||"";aDelivery.value=x.deliveryEnabled===false?"false":"true";selectedImage=x.image||"";
-imagePreview.src=selectedImage||"";imagePreview.classList.toggle("show",!!selectedImage);
-uploadName.textContent=selectedImage?"Current image selected":"No image selected";
-accountModal.classList.add("open");
-}
-function closeAccount(){accountModal.classList.remove("open");imageFile.value=""}
-imageFile.addEventListener("change",handleFile);
-function handleFile(e){
-const file=e.target.files[0]; if(!file)return;
-if(!file.type.startsWith("image/")){alert("Please choose an image file.");e.target.value="";return}
-if(file.size>4*1024*1024){alert("Please choose an image smaller than 4 MB.");e.target.value="";return}
-const reader=new FileReader();
-reader.onload=()=>{selectedImage=reader.result;imagePreview.src=selectedImage;imagePreview.classList.add("show");uploadName.textContent=file.name+" • "+Math.round(file.size/1024)+" KB"};
-reader.readAsDataURL(file);
-}
-const dz=document.getElementById("dropZone");
-["dragenter","dragover"].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add("drag")}));
-["dragleave","drop"].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove("drag")}));
-dz.addEventListener("drop",e=>{if(e.dataTransfer.files.length){imageFile.files=e.dataTransfer.files;handleFile({target:imageFile})}});
-
-async function saveAccount(){
-const name=aName.value.trim();const price=Number(aPrice.value);const desc=aDesc.value.trim();const email=aEmail.value.trim();const password=aPassword.value;const uid=aUid.value.trim();const deliveryEnabled=aDelivery.value!=="false";
-if(!name){alert("Enter an account name.");return}
-if(!Number.isFinite(price)||price<0){alert("Enter a valid price.");return}
-if(!selectedImage){if(!confirm("No image selected. Save the account without a picture?"))return}
-const obj={id:editingIndex<0?Date.now():D.accounts[editingIndex].id,name,description:desc,price,image:selectedImage,email,password,uid,deliveryEnabled,sold:editingIndex<0?false:!!D.accounts[editingIndex].sold,active:editingIndex<0?true:D.accounts[editingIndex].active};
-if(editingIndex<0)D.accounts.push(obj);else D.accounts[editingIndex]=obj;
-try{await put();closeAccount();alert("Account saved to the server.")}catch(e){alert(e.message)}
-}
-async function toggleAcc(i){D.accounts[i].active=!D.accounts[i].active;try{await put()}catch(e){alert(e.message)}}
-async function toggleSold(i){D.accounts[i].sold=!D.accounts[i].sold;try{await put()}catch(e){alert(e.message)}}
-async function delAcc(i){if(confirm("Delete this account listing?")){D.accounts.splice(i,1);try{await put()}catch(e){alert(e.message)}}}
-
-async function renderOrdersReviews(){
-  const token=sessionStorage.getItem("maxshop_admin_token"); if(!token)return;
-  try{
-    const r=await fetch("/api/maxshop/admin/orders",{headers:{Authorization:"Bearer "+token},cache:"no-store"}); const j=await r.json(); if(!r.ok)throw new Error(j.error||"Could not load orders.");
-    D.orders=j.orders||[]; const paid=D.orders.filter(o=>o.payment_status==="Paid"); const pending=D.orders.filter(o=>o.payment_status!=="Paid");
-    const oc=document.getElementById("orderCount"); if(oc)oc.textContent=String(pending.length);
-    const ol=document.getElementById("ordersList"); if(ol)ol.innerHTML=D.orders.length?D.orders.map(o=>`<div class="row"><div><b>${esc(o.package_name)}</b> — ${esc(D.settings.currency)}${Number(o.amount||0).toLocaleString()}</div><div class="muted">UID: ${esc(o.uid)} • ${esc(o.customer_name||"")} • ${esc(o.email||"")}<br>Payment: <span class="pill">${esc(o.payment_status)}</span> Delivery: <span class="pill ${o.fulfillment_status.includes("Failed")?'off':''}">${esc(o.fulfillment_status)}</span><br><small>${esc(o.payment_reference)} ${o.provider_message?'• '+esc(o.provider_message):''}</small></div><div class="actions"><button class="btn dark" onclick="retryOrder(${Number(o.id)})">Retry Delivery</button></div></div>`).join(""):"<p>No orders yet.</p>";
-    const rl=document.getElementById("adminReviewsList"); const reviews=D.reviews||[]; if(rl)rl.innerHTML=reviews.length?reviews.slice().reverse().map((x,i)=>`<div class="row"><div><b>${esc(x.name)}</b> • ${"★".repeat(Number(x.rating||5))}<br><span class="muted">${esc(x.purchaseType||"Purchase")} • ${esc(x.text)}</span></div><div class="actions"><button class="btn dark" onclick="removeReview(${reviews.length-1-i})">Delete</button></div></div>`).join(""):"<p>No reviews yet.</p>";
-  }catch(e){alert(e.message)}
-}
-async function retryOrder(id){const token=sessionStorage.getItem("maxshop_admin_token");try{const r=await fetch(`/api/maxshop/admin/orders/${id}/retry`,{method:"POST",headers:{Authorization:"Bearer "+token}});const j=await r.json();if(!r.ok)throw new Error(j.error||"Retry failed.");alert("Delivery retry submitted.");await renderOrdersReviews()}catch(e){alert(e.message)}}
-async function removeReview(i){if(!confirm("Delete this review?"))return;D.reviews.splice(i,1);try{await put();await renderOrdersReviews()}catch(e){alert(e.message)}}
-
-function exportData(){let blob=new Blob([JSON.stringify(D,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="max-shop-backup.json";a.click()}
-function importData(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=async()=>{try{D=JSON.parse(r.result);await put();alert("Imported to server.")}catch(err){alert(err.message||"Invalid JSON file.")}};r.readAsText(f)}
-async function resetData(){if(confirm("Reset all shop data?")){D=clone(defaults);try{await put()}catch(e){alert(e.message)}}}
-
-const loginEl=document.getElementById("login"),app=document.getElementById("app");
-(async()=>{if(sessionStorage.getItem("maxshop_admin_token")){try{D=await get();loginEl.classList.add("hidden");app.classList.remove("hidden");render();await renderOrdersReviews()}catch(e){sessionStorage.removeItem("maxshop_admin_token")}}})();
+(function(){
+  const KEY="ff_nexus_hub_admin_data";
+  function data(){try{return JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){return {}}}
+  function save(d){localStorage.setItem(KEY,JSON.stringify(d))}
+  function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]))}
+  async function serverApps(){return (await adminApi('/api/admin/applications')).applications||[]}
+  async function renderApplications(){
+    const box=document.getElementById("adminApplicationsList");if(!box)return;
+    let items=[];try{items=await serverApps()}catch(e){box.innerHTML='<p class="admin-form-help">'+esc(e.message||'Could not load applications.')+'</p>';return}
+    if(!items.length){box.innerHTML='<p>No applications yet.</p>';return}
+    box.innerHTML=items.map(x=>{const paid=x.type!=='player'&&String(x.status||'').toLowerCase()==='approved'&&String(x.payment_ref||x.payment_reference||'');const payer=x.payload?.email||x.email||'';const when=x.reviewed_at||x.created_at;return `<div class="admin-application-card"><div class="admin-app-head"><b>${esc(x.type).toUpperCase()} — ${esc(x.name)}</b><span>${esc(x.status)}</span></div><p>${x.uid?'UID: '+esc(x.uid)+' • ':''}${x.phone?'Phone: '+esc(x.phone):''}</p><p>${esc(x.details||x.payload?.details||'')}</p>${x.type!=='player'?`<p><b>Payment:</b> ${esc(x.paymentMethod?.provider||x.payload?.paymentMethod?.provider||'Paystack')} — <b>Amount: ₦${Number(x.payment_amount??x.paymentAmount??0).toLocaleString("en-NG")}</b> — Ref: ${esc(x.payment_ref||x.payment_reference||x.paymentRef||'')}</p>${payer?`<p><b>Paid by:</b> ${esc(payer)}</p>`:''}${when?`<p><b>Payment/Review time:</b> ${esc(new Date(when).toLocaleString('en-NG'))}</p>`:''}`:`<p><b>Payment:</b> Free Player Registration</p>`}${(x.image||x.payload?.image)?`<img src="${x.image||x.payload.image}" class="admin-app-image">`:''}${x.payment_proof||x.paymentProof?`<a href="${x.payment_proof||x.paymentProof}" target="_blank">View payment proof</a>`:''}${paid?`<div class="admin-app-actions"><span class="admin-form-help">✓ Payment confirmed — published automatically. No review required.</span></div>`:`<div class="admin-app-actions"><button type="button" onclick="approvePublicApplication('${esc(x.id)}')">Approve & Publish</button><button type="button" onclick="rejectPublicApplication('${esc(x.id)}')">Reject</button></div>`}</div>`}).join('');
+  }
+  async function review(id,action){
+    try{await adminApi('/api/admin/applications/'+encodeURIComponent(id)+'/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action})});await renderApplications();if(typeof showToast==='function')showToast(action==='approve'?'Application approved and published.':'Application rejected.');return;}catch(e){if(/Admin session|login required|authentication/i.test(String(e.message||'')))return;}
+    const d=data(),a=(d.applications||[]).find(x=>x.id===id);if(!a)return;a.status=action==='approve'?'Approved':'Rejected';if(action==='approve'){const target=a.type==='creator'?'creators':a.type==='vendor'?'vendors':'players';d[target]=Array.isArray(d[target])?d[target]:[];if(!d[target].some(x=>x.id===a.id))d[target].push({...a,status:'Active'});}save(d);renderApplications();showToast(action==='approve'?'Application approved and published.':'Application rejected.');
+  }
+  window.approvePublicApplication=async id=>{if(confirm('Approve and publish this application?'))await review(id,'approve')};
+  window.rejectPublicApplication=async id=>{if(confirm('Reject this application?'))await review(id,'reject')};
+  async function renderTournamentRegistrations(){const box=document.getElementById("tournamentRegistrationsList");if(!box)return;try{const d=await adminApi('/api/admin/tournament-registrations');const items=d.registrations||[];if(!items.length){box.innerHTML='<p class="admin-form-help">No tournament registrations yet.</p>';return}box.innerHTML=items.map(x=>`<div class="tournament-registration-row"><b>${esc(x.tournament_name)}</b><span>${esc(x.ign)} • UID: ${esc(x.uid)} • WhatsApp: ${esc(x.whatsapp)}</span><small>${new Date(x.created_at).toLocaleString()}</small></div>`).join('')}catch(e){box.innerHTML='<p class="admin-form-help">'+esc(e.message||'Could not load registrations.')+'</p>';}}
+  window.refreshAdminLeaderboard=async function(){const box=document.getElementById('adminLeaderboardList');if(!box)return;try{const d=await adminApi('/api/admin/leaderboard');const rows=d.players||[];box.innerHTML=rows.length?`<div class="table-wrap"><table><tr><th>Rank</th><th>Player</th><th>UID</th><th>Wins</th><th>Points</th><th>Played</th><th>Verified</th><th>Action</th></tr>${rows.map((p,i)=>`<tr><td>#${i+1}</td><td>${esc(p.ign)}</td><td>${esc(p.uid)}</td><td><input class="lb-wins" data-id="${p.id}" value="${p.wins}" type="number" min="0"></td><td><input class="lb-points" data-id="${p.id}" value="${p.points}" type="number" min="0"></td><td><input class="lb-played" data-id="${p.id}" value="${p.tournaments_played}" type="number" min="0"></td><td><input class="lb-verified" data-id="${p.id}" type="checkbox" ${p.verified?'checked':''}></td><td><button class="mini" onclick="saveLeaderboardPlayer('${p.id}')">Save</button></td></tr>`).join('')}</table></div>`:'<p>No registered players yet.</p>'}catch(e){box.innerHTML='<p>'+esc(e.message)+'</p>';}}
+  window.saveLeaderboardPlayer=async function(id){const w=document.querySelector(`.lb-wins[data-id="${id}"]`),p=document.querySelector(`.lb-points[data-id="${id}"]`),t=document.querySelector(`.lb-played[data-id="${id}"]`),v=document.querySelector(`.lb-verified[data-id="${id}"]`);try{await adminApi('/api/admin/leaderboard/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({wins:w?.value,points:p?.value,tournamentsPlayed:t?.value,verified:v?.checked})});showToast('Leaderboard updated.');refreshAdminLeaderboard();}catch(e){showToast(e.message)}}
+  document.addEventListener("DOMContentLoaded",renderApplications);document.addEventListener("DOMContentLoaded",renderTournamentRegistrations);document.addEventListener("DOMContentLoaded",()=>{if(location.hash==='#leaderboard-admin')refreshAdminLeaderboard()});
+})();
 </script>
+<style>
+.admin-application-card{padding:16px;margin:12px 0;border:1px solid rgba(255,255,255,.12);border-radius:12px}.admin-app-head{display:flex;justify-content:space-between;gap:12px}.admin-app-image{max-width:160px;max-height:160px;object-fit:cover;border-radius:10px;margin:8px 0}.admin-app-actions{display:flex;gap:8px;margin-top:12px}.admin-app-actions button{padding:9px 12px;border:0;border-radius:8px;cursor:pointer}
+</style>
+
 </body>
 </html>
