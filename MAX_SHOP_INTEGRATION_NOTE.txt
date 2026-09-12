@@ -1,11 +1,5 @@
-MAX SHOP INTEGRATION
+MAX SHOP FINAL INTEGRATED
 
-Public flow:
-FF Nexus Hub -> Top Up Centre -> Open MAX SHOP -> MAX SHOP opens inside the same Nexus Hub page.
+Public MAX SHOP is embedded directly in the Nexus Hub page. The public Enter MAX SHOP button uses an iframe srcdoc containing the bundled MAX SHOP HTML, so it does not navigate to /max-shop/store or depend on a MAX SHOP static route.
 
-The public Top Up Centre card is intentionally minimal: only the heading and Open MAX SHOP button.
-
-MAX SHOP admin is separate and is not linked from the public site.
-Admin path is controlled by MAXSHOP_ADMIN_PATH (default: secure-portal-7k4m) and requires MAXSHOP_ADMIN_PASSWORD.
-
-Do not create max-shop/index.html. Keep the main Nexus Hub index.html at the project root.
+MAX SHOP admin remains separate at the configured private route and uses MAXSHOP_ADMIN_PASSWORD.
