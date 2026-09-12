@@ -17,11 +17,11 @@ function hasLocalAdminContent(){
 }
 
 async function hydrateSharedAdminData(){
-  // The public page must not depend on a single slow/failed request.
-  // Retry a few times because Railway/Neon can be waking up on the first hit.
-  for(let attempt=1; attempt<=3; attempt++){
+  // Always fetch the latest shared content before finalising the first render.
+  // Railway/Neon can wake slowly, so use several cache-busted attempts.
+  for(let attempt=1; attempt<=5; attempt++){
     try{
-      const r=await fetch('/api/public-content',{cache:'no-store'});
+      const r=await fetch('/api/public-content?_='+Date.now()+'_'+attempt,{cache:'no-store',headers:{'Cache-Control':'no-cache'}});
       if(!r.ok) throw new Error(`HTTP ${r.status}`);
       const x=await r.json();
       if(x && x.data && typeof x.data==='object'){
@@ -33,7 +33,7 @@ async function hydrateSharedAdminData(){
       throw new Error('Invalid shared website content response.');
     }catch(e){
       console.warn(`Could not load shared website content (attempt ${attempt}/3):`,e.message);
-      if(attempt<3) await new Promise(resolve=>setTimeout(resolve,400*attempt));
+      if(attempt<5) await new Promise(resolve=>setTimeout(resolve,350*attempt));
     }
   }
   return false;
@@ -942,6 +942,7 @@ async function bootPublicSite(){
       applySupportVisionSettings();
     }
     const loaded=await hydrateSharedAdminData();
+    // Final render happens after the database response, not only after a manual reload.
     if(loaded){
       renderAdminContentOnPublicSite();
       applyAdminSettingsToWebsite();

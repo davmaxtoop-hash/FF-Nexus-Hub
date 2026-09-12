@@ -125,7 +125,20 @@ function getData(){
   try{return JSON.parse(localStorage.getItem("maxShopData")||"null")||clone(defaults)}catch(e){return clone(defaults)}
 }
 function saveData(d){SERVER_DATA=d; localStorage.setItem("maxShopData",JSON.stringify(d))}
-async function loadServerData(){try{const r=await fetch("/api/maxshop/data",{cache:"no-store"});if(r.ok){const j=await r.json();SERVER_DATA=j.data||clone(defaults);renderShop();}}catch(e){}}
+async function loadServerData(){
+  // MAX SHOP content (including reviews/counts) must refresh automatically on first visit.
+  for(let attempt=1;attempt<=5;attempt++){
+    try{
+      const r=await fetch("/api/maxshop/data?_="+Date.now()+"_"+attempt,{cache:"no-store",headers:{"Cache-Control":"no-cache"}});
+      if(r.ok){
+        const j=await r.json();
+        if(j && j.data){SERVER_DATA=j.data;renderShop();return true;}
+      }
+    }catch(e){}
+    if(attempt<5) await new Promise(resolve=>setTimeout(resolve,350*attempt));
+  }
+  return false;
+}
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function money(n){return getData().settings.currency+Number(n||0).toLocaleString()}
 
