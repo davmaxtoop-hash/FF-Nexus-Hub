@@ -728,3 +728,8 @@ app.get('/api/tournaments/:tournamentId/registrations/count', requireDb, async (
 app.get('/{*splat}',(req,res)=>res.sendFile(path.join(__dirname,'index.html')));
 
 initDb().then(()=>app.listen(PORT,()=>console.log(`FF Nexus Hub running on port ${PORT}`))).catch(err=>{console.error('Database initialization failed:',err); app.listen(PORT,()=>console.log(`FF Nexus Hub running on port ${PORT} (database unavailable)`));});
+
+
+// MAX SHOP module: static files live under /max-shop/.
+// Keep Nexus Hub's root index.html as the main site.
+// MAX SHOP admin is intentionally not linked from public pages.

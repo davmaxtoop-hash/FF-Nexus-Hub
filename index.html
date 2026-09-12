@@ -33,6 +33,32 @@
 <script>
 (function(){const q=new URLSearchParams(location.search);if(q.get("payment")==="success"){history.replaceState({},"",location.pathname+location.hash);setTimeout(()=>{if(typeof showToast==="function")showToast("Payment successful. Your application is now pending admin review.");},300)}else if(q.get("payment")==="failed"){history.replaceState({},"",location.pathname+location.hash);setTimeout(()=>{if(typeof showToast==="function")showToast("Payment was not completed. You can try again.");},300)}})();
 </script>
+
+<style id="max-shop-integrated-ui">
+#max-topup-centre{padding:70px 6%;max-width:1400px;margin:auto}
+.max-topup-card{position:relative;overflow:hidden;border:1px solid rgba(255,194,71,.28);border-radius:26px;padding:32px;background:radial-gradient(circle at 85% 15%,rgba(255,177,0,.20),transparent 34%),linear-gradient(135deg,#151a2d,#0b0e1a 70%);box-shadow:0 24px 70px rgba(0,0,0,.28)}
+.max-topup-card:after{content:'💎';position:absolute;right:30px;bottom:-25px;font-size:130px;opacity:.08;pointer-events:none}
+.max-topup-eyebrow{color:#ffc247;font-size:11px;letter-spacing:2px;font-weight:900}
+.max-topup-card h2{font-size:clamp(32px,5vw,52px);margin:8px 0 8px;line-height:1}
+.max-topup-card p{color:#aeb8d7;max-width:680px;margin:0 0 22px}
+.max-topup-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.max-shop-modal{position:fixed;inset:0;background:rgba(3,5,10,.82);backdrop-filter:blur(10px);z-index:1000;display:none;padding:18px}
+.max-shop-modal.open{display:flex;align-items:center;justify-content:center}
+.max-shop-intro-box{width:min(820px,100%);max-height:92vh;overflow:auto;border:1px solid rgba(255,194,71,.28);border-radius:26px;background:#0a0d16;box-shadow:0 35px 100px rgba(0,0,0,.55);position:relative}
+.max-shop-intro-inner{padding:38px 28px 30px;text-align:center}
+.max-shop-intro-inner .badge{display:inline-block;padding:8px 12px;border:1px solid #5a4310;background:#211a0a;color:#ffc94d;border-radius:999px;font-size:12px;font-weight:900}
+.max-shop-intro-inner h2{font-size:clamp(42px,8vw,76px);line-height:.9;margin:20px 0 15px}.max-shop-intro-inner h2 span{color:#ffb300}
+.max-shop-intro-inner>p{max-width:650px;margin:0 auto;color:#a6acba;line-height:1.7;font-size:16px}
+.max-shop-intro-features{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:26px 0;text-align:left}
+.max-shop-intro-feature{background:#111521;border:1px solid #262d40;border-radius:17px;padding:17px}.max-shop-intro-feature b{display:block;margin:6px 0}.max-shop-intro-feature span{color:#929aaa;font-size:12px;line-height:1.5}
+.max-shop-close{position:absolute;right:15px;top:12px;border:0;background:#171b27;color:#fff;width:40px;height:40px;border-radius:50%;font-size:25px;cursor:pointer}
+.max-shop-frame-wrap{position:fixed;inset:10px;display:none;background:#08090d;border:1px solid #303441;border-radius:18px;overflow:hidden;z-index:1001;box-shadow:0 30px 100px rgba(0,0,0,.65)}
+.max-shop-frame-wrap.open{display:flex;flex-direction:column}
+.max-shop-frame-top{height:48px;flex:0 0 48px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:#0d1018;border-bottom:1px solid #252833;color:#fff}
+.max-shop-frame-top strong{font-size:14px}.max-shop-frame-top button{border:0;background:#1b202b;color:#fff;border-radius:9px;padding:8px 12px;font-weight:800;cursor:pointer}
+.max-shop-frame{width:100%;height:calc(100% - 48px);border:0;background:#08090d}
+@media(max-width:700px){#max-topup-centre{padding:55px 5%}.max-shop-intro-features{grid-template-columns:1fr}.max-shop-modal{padding:8px}.max-shop-intro-inner{padding:42px 18px 24px}.max-shop-frame-wrap{inset:0;border-radius:0}}
+</style>
 </head>
 <body>
 <div class="bg-watermark">FF</div>
@@ -41,7 +67,7 @@
   <div class="brand"><span>FF</span> NEXUS HUB</div>
   <button class="menu-btn" onclick="toggleMenu()">☰</button>
   <nav id="mainNav">
-    <a href="#home">Home</a><a href="/max-shop/" style="color:#ffc247;font-weight:800">MAX SHOP</a><a href="#creators">Creators</a><a href="#vendors">Vendors</a>
+    <a href="#home">Home</a><a href="#max-topup-centre" style="color:#ffc247;font-weight:800">Top Up Centre</a><a href="#creators">Creators</a><a href="#vendors">Vendors</a>
     <a href="#news">News</a><a href="#tournaments">Tournaments</a><a href="#finder">Teammates</a><a href="#leaderboard">Leaderboard</a>
     <a href="#community">Community</a><a href="javascript:void(0)" class="account-nav" onclick="openPlayerLogin()">Player Login</a>
   </nav>
@@ -65,6 +91,45 @@
     <div id="featuredCreatorContent"><p class="notice">No creators added yet.</p></div>
   </div>
 </section>
+
+
+<section id="max-topup-centre">
+  <div class="max-topup-card">
+    <div class="max-topup-eyebrow">FF NEXUS HUB • GAMING SERVICES</div>
+    <h2>💎 Top Up Centre</h2>
+    <p>Your MAX SHOP is built directly into the Nexus Hub. Tap below to see the MAX SHOP introduction, then enter the shop without leaving this website or changing the page.</p>
+    <div class="max-topup-actions">
+      <button class="btn primary" type="button" onclick="openMaxShopIntro()">Open MAX SHOP →</button>
+      <span class="notice" style="margin:0">Connected to FF Nexus Hub</span>
+    </div>
+  </div>
+</section>
+
+<div id="maxShopIntroModal" class="max-shop-modal" aria-hidden="true">
+  <div class="max-shop-intro-box">
+    <button class="max-shop-close" type="button" aria-label="Close" onclick="closeMaxShopIntro()">×</button>
+    <div class="max-shop-intro-inner">
+      <div class="badge">💎 FF NEXUS HUB • MAX SHOP</div>
+      <h2>Welcome to <span>MAX SHOP</span></h2>
+      <p>Your dedicated gaming top-up centre, connected directly to FF Nexus Hub. Browse Free Fire diamond packages, gaming accounts and customer information without being sent to another website.</p>
+      <div class="max-shop-intro-features">
+        <div class="max-shop-intro-feature"><div style="font-size:26px">💎</div><b>Free Fire Top-Ups</b><span>Choose from the available diamond packages and submit your player details.</span></div>
+        <div class="max-shop-intro-feature"><div style="font-size:26px">⚡</div><b>Simple Ordering</b><span>Open MAX SHOP directly inside the Nexus Hub and continue your order there.</span></div>
+        <div class="max-shop-intro-feature"><div style="font-size:26px">🛡️</div><b>One Connected Hub</b><span>MAX SHOP stays part of FF Nexus Hub instead of sending visitors to a separate site.</span></div>
+      </div>
+      <button class="btn gold" type="button" style="font-size:16px;padding:14px 24px" onclick="enterMaxShop()">Enter MAX SHOP →</button>
+      <div class="notice" style="margin-top:14px">MAX SHOP opens inside this Nexus Hub page.</div>
+    </div>
+  </div>
+</div>
+
+<div id="maxShopFrameWrap" class="max-shop-frame-wrap" aria-hidden="true">
+  <div class="max-shop-frame-top">
+    <strong>💎 MAX SHOP</strong>
+    <button type="button" onclick="exitMaxShop()">← Back to Nexus Hub</button>
+  </div>
+  <iframe id="maxShopFrame" class="max-shop-frame" title="MAX SHOP" src="./max-shop/max-index.html"></iframe>
+</div>
 
 <section id="creators" class="section">
   <div class="section-head"><div><span class="eyebrow">DISCOVER</span><h2>Creator Directory</h2><button class="btn primary listing-apply-btn" type="button" onclick="openListingApplication('creator')">Apply as Creator</button></div><input id="globalSearch" class="search" oninput="filterAll()" placeholder="Search creators, vendors, tournaments..."></div>
@@ -140,17 +205,37 @@
   <small>Fan/community platform. Not affiliated with Garena.</small>
 </footer>
 <div id="toast"></div><div id="publicProfileRoot"></div>
+
+<script id="max-shop-integrated-js">
+function openMaxShopIntro(){
+  const m=document.getElementById('maxShopIntroModal');
+  if(!m)return;
+  m.classList.add('open'); m.setAttribute('aria-hidden','false');
+  document.body.style.overflow='hidden';
+}
+function closeMaxShopIntro(){
+  const m=document.getElementById('maxShopIntroModal');
+  if(!m)return;
+  m.classList.remove('open'); m.setAttribute('aria-hidden','true');
+  if(!document.getElementById('maxShopFrameWrap').classList.contains('open')) document.body.style.overflow='';
+}
+function enterMaxShop(){
+  closeMaxShopIntro();
+  const f=document.getElementById('maxShopFrameWrap');
+  if(!f)return;
+  f.classList.add('open'); f.setAttribute('aria-hidden','false');
+  document.body.style.overflow='hidden';
+}
+function exitMaxShop(){
+  const f=document.getElementById('maxShopFrameWrap');
+  if(!f)return;
+  f.classList.remove('open'); f.setAttribute('aria-hidden','true');
+  document.body.style.overflow='';
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMaxShopIntro();exitMaxShop();}});
+</script>
 <script src="script.js"></script>
 
-<!-- MAX SHOP TOP UP CENTRE -->
-<section id="max-topup-centre" style="margin:32px auto;max-width:1100px;padding:0 18px;">
-  <a href="/max-shop/" style="display:block;text-decoration:none;border-radius:22px;padding:24px;background:linear-gradient(135deg,#111827,#2563eb);color:#fff;box-shadow:0 12px 30px rgba(0,0,0,.18);">
-    <div style="font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.85;">MAX SHOP</div>
-    <div style="font-size:28px;font-weight:900;margin-top:6px;">💎 Top Up Centre</div>
-    <div style="margin-top:8px;opacity:.9;">Buy Free Fire diamonds quickly and securely.</div>
-    <span style="display:inline-block;margin-top:16px;background:#fff;color:#111827;padding:11px 18px;border-radius:12px;font-weight:800;">Open MAX SHOP →</span>
-  </a>
-</section>
-<!-- END MAX SHOP TOP UP CENTRE -->
+
 </body>
 </html>

@@ -1,0 +1,19 @@
+FF NEXUS HUB + MAX SHOP
+=========================
+
+PUBLIC FLOW
+1. FF Nexus Hub remains the main index.html.
+2. Top Up Centre opens MAX SHOP introduction.
+3. Enter MAX SHOP opens max-shop/max-index.html.
+4. MAX SHOP is a separate module inside the same project.
+
+MAX SHOP ADMIN
+- Separate page: max-shop/max-admin.html
+- It is not linked from the public navigation.
+- It is intended to control MAX SHOP only.
+- Configure MAXSHOP_ADMIN_PASSWORD in Railway/server environment when using server authentication.
+
+IMPORTANT
+Upload the contents of this folder to the ROOT of the existing GitHub repository.
+Do not rename the Nexus Hub index.html.
+Do not create another max-shop/index.html.
