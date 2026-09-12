@@ -17,18 +17,24 @@ function hasLocalAdminContent(){
 }
 
 async function hydrateSharedAdminData(){
-  try{
-    const r=await fetch('/api/public-content',{cache:'no-store'});
-    if(!r.ok) return false;
-    const x=await r.json();
-    if(x && x.data && typeof x.data==='object'){
-      // The database is authoritative for the public website. Never replace
-      // it with browser-local data during a normal public-page load.
-      localStorage.setItem(PUBLIC_ADMIN_DATA_KEY,JSON.stringify(x.data));
-      return true;
+  // The public page must not depend on a single slow/failed request.
+  // Retry a few times because Railway/Neon can be waking up on the first hit.
+  for(let attempt=1; attempt<=3; attempt++){
+    try{
+      const r=await fetch('/api/public-content',{cache:'no-store'});
+      if(!r.ok) throw new Error(`HTTP ${r.status}`);
+      const x=await r.json();
+      if(x && x.data && typeof x.data==='object'){
+        // The database is authoritative for the public website. Never replace
+        // it with browser-local data during a normal public-page load.
+        localStorage.setItem(PUBLIC_ADMIN_DATA_KEY,JSON.stringify(x.data));
+        return true;
+      }
+      throw new Error('Invalid shared website content response.');
+    }catch(e){
+      console.warn(`Could not load shared website content (attempt ${attempt}/3):`,e.message);
+      if(attempt<3) await new Promise(resolve=>setTimeout(resolve,400*attempt));
     }
-  }catch(e){
-    console.warn('Could not load shared website content:',e.message);
   }
   return false;
 }
@@ -918,7 +924,44 @@ function renderAdminContentOnPublicSite(){
 }
 function escapeAdminPublicText(v){return String(v||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));}
 
-document.addEventListener("DOMContentLoaded",async()=>{await hydrateSharedAdminData();renderAdminContentOnPublicSite();applyAdminSettingsToWebsite();renderFooterSocialLinks();applySupportVisionSettings();});
+async function bootPublicSite(){
+  if(document.getElementById("adminApp")) return;
+  // script.js is loaded at the end of index.html, so the public DOM is already
+  // available. Start hydration immediately instead of waiting for
+  // DOMContentLoaded. This prevents the first visit from showing 0/empty
+  // content until the user manually refreshes.
+  if(window.__ffNexusPublicBoot) return window.__ffNexusPublicBoot;
+  window.__ffNexusPublicBoot=(async()=>{
+    // Render cached data immediately when available, then reconcile with the
+    // database. This makes returning visitors instant while keeping the DB
+    // authoritative.
+    if(hasLocalAdminContent()){
+      renderAdminContentOnPublicSite();
+      applyAdminSettingsToWebsite();
+      renderFooterSocialLinks();
+      applySupportVisionSettings();
+    }
+    const loaded=await hydrateSharedAdminData();
+    if(loaded){
+      renderAdminContentOnPublicSite();
+      applyAdminSettingsToWebsite();
+      renderFooterSocialLinks();
+      applySupportVisionSettings();
+    }
+    // Counts are refreshed after shared content is ready so they cannot be
+    // left at the initial zero values from the static HTML.
+    await refreshPlayerCount();
+    const d=publicAdminData();
+    const countMap={creators:"#liveCreatorCount",vendors:"#liveVendorCount",tournaments:"#liveTournamentCount"};
+    Object.keys(countMap).forEach(k=>{
+      const el=document.querySelector(countMap[k]);
+      if(el) el.textContent=String(Array.isArray(d[k])?d[k].length:0);
+    });
+    updateTournamentCards();
+  })();
+  return window.__ffNexusPublicBoot;
+}
+bootPublicSite();
 
 /* ===== MONTHLY CREATOR & VENDOR RANKINGS ===== */
 function currentRankingMonth(){

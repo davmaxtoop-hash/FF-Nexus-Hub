@@ -153,6 +153,10 @@ app.get('/api/health',(req,res)=>res.status(dbReady()?200:503).json({ok:dbReady(
 app.get('/api/config',(req,res)=>res.json({listingFee:LISTING_FEE_NGN,paystackPublicKey:PAYSTACK_PUBLIC_KEY}));
 
 app.get('/api/public-content', requireDb, async (req,res)=>{
+  // This endpoint is live website state; never let a proxy/browser serve stale content.
+  res.set('Cache-Control','no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma','no-cache');
+  res.set('Expires','0');
   try{
     const rows=await sql`SELECT data,updated_at FROM site_content WHERE id=1 LIMIT 1`;
     const row=rows[0];
