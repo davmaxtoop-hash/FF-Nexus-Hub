@@ -82,6 +82,30 @@ app.get('/admin.html', (req,res)=>res.sendFile(path.join(__dirname,'admin.html')
 
 let sql = null;
 let dbInitialized = false;
+
+function defaultMaxShopData(){
+  return {
+    settings:{
+      name:"MAX SHOP",
+      hero:"Top-ups and gaming accounts in one place. Choose what you need and complete your order.",
+      whatsapp:"08169897289",
+      email:"maxdesignng@gmail.com",
+      currency:"₦",
+      paymentInfo:"Bank/Transfer details will appear here. Please pay only after checking your order details."
+    },
+    topups:[
+      {id:1,name:"100 Diamonds",price:1000,active:true},
+      {id:2,name:"310 Diamonds",price:3000,active:true},
+      {id:3,name:"520 Diamonds",price:5000,active:true},
+      {id:4,name:"1,060 Diamonds",price:10000,active:true},
+      {id:5,name:"2,180 Diamonds",price:20000,active:true},
+      {id:6,name:"5,600 Diamonds",price:50000,active:true},
+      {id:7,name:"11,500 Diamonds",price:100000,active:true}
+    ],
+    accounts:[], orders:[], reviews:[]
+  };
+}
+
 function dbReady(){ return !!DATABASE_URL && dbInitialized && !!sql; }
 function requireDb(req,res,next){ if(!dbReady()) return res.status(503).json({error:'Database is not ready. Check DATABASE_URL and the server logs.'}); next(); }
 
@@ -156,6 +180,7 @@ async function initDb(){
     data JSONB NOT NULL DEFAULT '{}'::jsonb,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`;
+  await sql`INSERT INTO maxshop_content(id,data,updated_at) VALUES(1,${defaultMaxShopData()},NOW()) ON CONFLICT(id) DO NOTHING`;
   await sql`CREATE TABLE IF NOT EXISTS maxshop_orders (
     id BIGSERIAL PRIMARY KEY,
     order_type TEXT NOT NULL DEFAULT 'diamond_topup',
@@ -528,7 +553,7 @@ app.post('/api/maxshop/admin/login',(req,res)=>{
 });
 
 app.get('/api/maxshop/data', requireDb, async (req,res)=>{
-  try{ const rows=await sql`SELECT data,updated_at FROM maxshop_content WHERE id=1 LIMIT 1`; const data=rows[0]?.data || defaultMaxShopData(); res.set('Cache-Control','no-store'); res.json({data,updatedAt:rows[0]?.updated_at||null}); }
+  try{ const rows=await sql`SELECT data,updated_at FROM maxshop_content WHERE id=1 LIMIT 1`; const raw=rows[0]?.data; const data=(raw && typeof raw==='object' && !Array.isArray(raw)) ? raw : defaultMaxShopData(); res.set('Cache-Control','no-store'); res.json({data,updatedAt:rows[0]?.updated_at||null}); }
   catch(e){res.status(500).json({error:'Could not load MAX SHOP data.'});}
 });
 
