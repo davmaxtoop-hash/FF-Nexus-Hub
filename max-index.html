@@ -1,13 +1,14 @@
 <!doctype html>
 <html lang="en">
 <head>
+<base href="/">
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MAX SHOP</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#08090d;color:#f5f7fb;font-family:Inter,Arial,sans-serif}a{text-decoration:none;color:inherit}
 header{position:sticky;top:0;z-index:20;background:#090a0fcc;backdrop-filter:blur(14px);border-bottom:1px solid #252833}.nav{max-width:1150px;margin:auto;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}.logo{font-size:24px;font-weight:950}.logo span{color:#ffb300}.navlinks{display:flex;gap:10px}.btn{border:0;border-radius:11px;padding:11px 15px;font-weight:850;cursor:pointer}.dark{background:#171922;color:#fff;border:1px solid #2b2e39}.gold{background:linear-gradient(135deg,#ffd21c,#ff7800);color:#17110a}
 .hero{max-width:1150px;margin:auto;padding:70px 20px 35px;display:grid;grid-template-columns:1.2fr .8fr;gap:30px}.tag{display:inline-block;border:1px solid #61460c;background:#231a09;color:#ffc64b;padding:7px 11px;border-radius:99px;font-size:12px;font-weight:900}h1{font-size:clamp(44px,7vw,78px);line-height:.92;margin:16px 0}.hero h1 span{color:#ffb300}.hero p{color:#9ca2b2;font-size:17px;line-height:1.6}.heroart{border:1px solid #3b2c12;border-radius:28px;min-height:300px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,#3b2006,#11131a 65%);font-size:110px}
-section{max-width:1150px;margin:auto;padding:35px 20px}.head{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px}.head h2{margin:0;font-size:29px}.muted{color:#969dac}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.card{background:linear-gradient(180deg,#141720,#0f1117);border:1px solid #272b36;border-radius:18px;padding:18px;overflow:hidden}.card img{width:100%;height:170px;object-fit:cover;border-radius:12px;background:#20232d;display:block}.topup-image{height:150px!important;margin-bottom:12px}.diamond{font-size:40px}.qty{font-size:22px;font-weight:900;margin-top:8px}.price{color:#ffc247;font-weight:900;margin:7px 0 15px}.widebtn{width:100%}.empty{padding:25px;border:1px dashed #363a46;border-radius:15px;color:#999}
+section{max-width:1150px;margin:auto;padding:35px 20px}.head{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px}.head h2{margin:0;font-size:29px}.muted{color:#969dac}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.card{background:linear-gradient(180deg,#141720,#0f1117);border:1px solid #272b36;border-radius:18px;padding:18px;overflow:hidden}.card img{width:100%;height:170px;object-fit:cover;border-radius:12px;background:#20232d}.diamond{font-size:40px}.qty{font-size:22px;font-weight:900;margin-top:8px}.price{color:#ffc247;font-weight:900;margin:7px 0 15px}.widebtn{width:100%}.empty{padding:25px;border:1px dashed #363a46;border-radius:15px;color:#999}
 .contact-section{max-width:1150px;margin:0 auto;padding:10px 20px 35px}.contact-card{display:grid;grid-template-columns:1fr auto auto;gap:14px;align-items:center;background:linear-gradient(135deg,#171a24,#15110a);border:1px solid #333744;border-radius:22px;padding:20px}.contact-card h3{margin:0 0 5px;font-size:20px}.contact-card p{margin:0;color:#9ca2b2}.contact-btn{display:flex;align-items:center;gap:9px;padding:12px 15px;border-radius:12px;border:1px solid #303440;background:#10131a;font-weight:850}.contact-btn.whatsapp{border-color:#245c43;background:#10261c;color:#79e3ad}.contact-btn.email{border-color:#3b3548;background:#17131f;color:#d8b8ff}.contact-icon{font-size:20px}@media(max-width:700px){.contact-card{grid-template-columns:1fr}.contact-btn{justify-content:center}}
 footer{text-align:center;border-top:1px solid #252833;color:#7f8594;padding:30px;margin-top:5px;font-size:13px}
 @media(max-width:800px){.hero{grid-template-columns:1fr}.heroart{display:none}.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:480px){.grid{grid-template-columns:1fr}.navlinks .hide{display:none}}
@@ -23,11 +24,11 @@ footer{text-align:center;border-top:1px solid #252833;color:#7f8594;padding:30px
 </style>
 </head>
 <body>
-<header><div class="nav"><div class="logo">MAX <span>SHOP</span> &#128293;</div><div class="navlinks"><a class="btn dark hide" href="#topups">Top Up</a><a class="btn dark" href="#accounts">Accounts</a></div></div></header>
+<header><div class="nav"><div class="logo">MAX <span>SHOP</span> 🔥</div><div class="navlinks"><a class="btn dark hide" href="#topups">Top Up</a><a class="btn dark" href="#accounts">Accounts</a></div></div></header>
 <main>
-<div class="hero"><div><span class="tag">GAMING MARKETPLACE</span><h1>LEVEL UP WITH <span>MAX SHOP.</span></h1><p id="heroText">Top-ups and gaming accounts in one place. Choose what you need and contact us to complete your order.</p><button class="btn gold" onclick="document.getElementById('accounts').scrollIntoView({behavior:'smooth'})">Browse Accounts</button></div><div class="heroart">&#127918;</div></div>
-<section id="topups"><div class="head"><div><h2>&#128142; Top Up Center</h2><div class="muted">Fast gaming top-up packages</div></div></div><div class="grid" id="topupGrid"></div></section>
-<section id="accounts"><div class="head"><div><h2>&#128100; Accounts For Sale</h2><div class="muted">Available gaming accounts</div></div></div><div class="grid" id="accountGrid"></div></section>
+<div class="hero"><div><span class="tag">GAMING MARKETPLACE</span><h1>LEVEL UP WITH <span>MAX SHOP.</span></h1><p id="heroText">Top-ups and gaming accounts in one place. Choose what you need and contact us to complete your order.</p><button class="btn gold" onclick="document.getElementById('accounts').scrollIntoView({behavior:'smooth'})">Browse Accounts</button></div><div class="heroart">🎮</div></div>
+<section id="topups"><div class="head"><div><h2>💎 Top Up Center</h2><div class="muted">Fast gaming top-up packages</div></div></div><div class="grid" id="topupGrid"></div></section>
+<section id="accounts"><div class="head"><div><h2>👤 Accounts For Sale</h2><div class="muted">Available gaming accounts</div></div></div><div class="grid" id="accountGrid"></div></section>
 <section id="reviews" class="section">
   <div class="review-section">
     <div class="section-head">
@@ -48,7 +49,7 @@ footer{text-align:center;border-top:1px solid #252833;color:#7f8594;padding:30px
 
     <div class="review-layout">
       <div class="review-form-card">
-        <h3>&#11088; Rate MAX SHOP</h3>
+        <h3>⭐ Rate MAX SHOP</h3>
         <p class="muted small">Bought diamonds or an account? Tell other gamers how it went.</p>
         <form id="reviewForm">
           <label>Name
@@ -90,8 +91,8 @@ footer{text-align:center;border-top:1px solid #252833;color:#7f8594;padding:30px
 <section class="contact-section" id="contact">
   <div class="contact-card">
     <div><div class="eyebrow">NEED HELP?</div><h3>Contact MAX SHOP</h3><p>Questions about diamonds, accounts or an order? Reach us directly.</p></div>
-    <a class="contact-btn whatsapp" id="whatsappLink" href="#" target="_blank" rel="noopener"><span class="contact-icon">&#128172;</span> WhatsApp</a>
-    <a class="contact-btn email" id="emailLink" href="#"><span class="contact-icon">&#9993;</span> Email</a>
+    <a class="contact-btn whatsapp" id="whatsappLink" href="#" target="_blank" rel="noopener"><span class="contact-icon">💬</span> WhatsApp</a>
+    <a class="contact-btn email" id="emailLink" href="#"><span class="contact-icon">✉️</span> Email</a>
   </div>
 </section>
 <footer id="footer">© 2026 MAX SHOP • Fan-made gaming marketplace</footer>
@@ -141,18 +142,12 @@ async function loadServerData(){
 }
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function money(n){return getData().settings.currency+Number(n||0).toLocaleString()}
-function imageSrc(value){
-  const raw=String(value||'').trim();
-  if(!raw)return '';
-  if(/^data:image\//i.test(raw) || /^https?:\/\//i.test(raw) || raw.startsWith('/')) return raw;
-  return '/max-shop/'+raw.replace(/^\.\//,'').replace(/^\/+?/,'');
-}
 
 function renderShop(){
   const d=getData();
   document.title=d.settings.name;
   const logo=document.querySelector(".logo");
-  if(logo) logo.innerHTML=esc(d.settings.name).replace(" "," <span>")+"</span> &#128293;";
+  if(logo) logo.innerHTML=esc(d.settings.name).replace(" "," <span>")+"</span> 🔥";
   const hero=document.getElementById("heroText"); if(hero) hero.textContent=d.settings.hero;
   const wa=document.getElementById("whatsappLink"); if(wa){const num=String(d.settings.whatsapp||"").replace(/\D/g,""); wa.href=num?"https://wa.me/"+num:"#";}
   const em=document.getElementById("emailLink"); if(em){const email=String(d.settings.email||"").trim(); em.href=email?"mailto:"+email:"#";}
@@ -161,7 +156,7 @@ function renderShop(){
   if(tg){
     tg.innerHTML=d.topups.filter(x=>x.active).map(x=>`
       <article class="card">
-        <img class="topup-image" src="${esc(x.image||'/max-shop/assets/diamond-package.svg')}" alt="${esc(x.name)}" loading="lazy" onerror="this.src='/max-shop/assets/diamond-package.svg'">
+        <div class="diamond">💎</div>
         <div class="qty">${esc(x.name)}</div>
         <div class="price">${money(x.price)}</div>
         <button class="btn gold widebtn" onclick="startDiamondOrder('${esc(x.id)}')">Buy Diamonds</button>
@@ -172,7 +167,7 @@ function renderShop(){
   if(ag){
     ag.innerHTML=d.accounts.filter(x=>x.active && !x.sold).map(x=>`
       <article class="card">
-        ${x.image?`<img src="${esc(imageSrc(x.image))}" alt="Gaming account image" loading="lazy" onerror="this.onerror=null;this.src='/max-shop/assets/account-placeholder.svg'">`:`<img src="/max-shop/assets/account-placeholder.svg" alt="Gaming account placeholder" loading="lazy">`}
+        ${x.image?`<img src="${esc(x.image)}" alt="" onerror="this.onerror=null;this.src='/assets/max-account-placeholder.svg'">`:`<img src="/assets/max-account-placeholder.svg" alt="MAX SHOP account placeholder">`}
         <div class="qty">${esc(x.name)}</div>
         <div class="muted">${esc(x.description||"Gaming account")}</div>
         <div class="price">${money(x.price)}</div>
@@ -197,7 +192,7 @@ function renderReviews(){
   if(starsEl) starsEl.textContent=stars;
   if(countEl) countEl.textContent=count.toLocaleString()+" review"+(count===1?"":"s");
   if(progressEl){
-    if(count>=500) progressEl.textContent="MAX SHOP has reached 5★ &#127881;";
+    if(count>=500) progressEl.textContent="MAX SHOP has reached 5★ 🎉";
     else { const next=(businessRating+1)*100; progressEl.textContent=(next-count).toLocaleString()+" reviews to reach "+(businessRating+1)+"★"; }
   }
 
@@ -293,7 +288,6 @@ document.addEventListener("DOMContentLoaded",()=>{
     history.replaceState({},"",location.pathname);
   }
   showPaymentResult();
-});
 </script>
 
 
@@ -304,7 +298,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     <h2 id="orderTitle">Place your order</h2>
     <p id="orderPackage" class="muted"></p>
     <div class="card" style="margin:12px 0;padding:14px">
-      <strong>&#128179; Payment Information</strong>
+      <strong>💳 Payment Information</strong>
       <p id="paymentInfo" class="muted" style="white-space:pre-line;margin-bottom:0"></p>
     </div>
     <form id="diamondOrderForm">
@@ -325,14 +319,14 @@ document.addEventListener("DOMContentLoaded",()=>{
     <div class="eyebrow">ACCOUNT PURCHASE</div>
     <h2>Buy <span id="accountPurchaseName"></span></h2>
     <p class="price" id="accountPurchasePrice"></p>
-    <div class="card" style="margin:12px 0;padding:14px"><strong>&#9889; Automatic Delivery</strong><p id="accountDeliveryNote" class="muted" style="line-height:1.5;margin-bottom:0"></p></div>
+    <div class="card" style="margin:12px 0;padding:14px"><strong>⚡ Automatic Delivery</strong><p id="accountDeliveryNote" class="muted" style="line-height:1.5;margin-bottom:0"></p></div>
     <form id="accountPurchaseForm">
       <input type="hidden" id="accountPurchaseId">
       <button class="btn gold widebtn" type="button" onclick="revealAccountDetails()">I Have Paid — Reveal Account</button>
     </form>
     <div id="accountDetails" style="display:none">
       <div class="card" style="padding:16px;margin-top:14px">
-        <h3 style="margin-top:0">&#127881; Account Delivered</h3>
+        <h3 style="margin-top:0">🎉 Account Delivered</h3>
         <p><strong>Email / Login:</strong><br><span id="deliveredEmail"></span></p>
         <p><strong>Password:</strong><br><span id="deliveredPassword"></span></p>
         <p><strong>UID / ID:</strong><br><span id="deliveredUid"></span></p>
