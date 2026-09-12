@@ -123,9 +123,31 @@ async function put(){
   const r=await fetch("/api/maxshop/admin/data",{method:"PUT",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({data:D})});
   const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error(j.error||"Could not save MAX SHOP data."); render();
 }
-async function login(){
-  const pass=document.getElementById("pass").value; const btn=document.querySelector("#login button"); if(btn)btn.disabled=true;
-  try{const r=await fetch("/api/maxshop/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:pass})}); const j=await r.json(); if(!r.ok)throw new Error(j.error||"Login failed."); sessionStorage.setItem("maxshop_admin_token",j.token); D=await get(); loginEl.classList.add("hidden"); app.classList.remove("hidden"); render(); await renderOrdersReviews();}catch(e){alert(e.message||"Login failed.");}finally{if(btn)btn.disabled=false;}
+async function login(event){
+  if(event) event.preventDefault();
+  const input=document.getElementById("pass");
+  const btn=document.getElementById("maxShopLoginBtn");
+  const status=document.getElementById("maxShopLoginStatus");
+  const pass=input ? input.value : "";
+  if(status) status.textContent="Checking password…";
+  if(btn) btn.disabled=true;
+  try{
+    const r=await fetch("/api/maxshop/admin/login",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({password:pass}),cache:"no-store"});
+    const text=await r.text();
+    let j={}; try{j=JSON.parse(text||"{}")}catch(e){}
+    if(!r.ok) throw new Error(j.error||("Login failed (HTTP "+r.status+")."));
+    if(!j.token) throw new Error("The server accepted the password but did not return a login token. Check JWT_SECRET in Railway.");
+    sessionStorage.setItem("maxshop_admin_token",j.token);
+    D=await get();
+    loginEl.classList.add("hidden");
+    app.classList.remove("hidden");
+    render();
+    await renderOrdersReviews();
+    if(status) status.textContent="Login successful.";
+  }catch(e){
+    console.error("MAX SHOP admin login:",e);
+    if(status) status.textContent=e.message||"Login failed. Check Railway deployment and variables.";
+  }finally{if(btn)btn.disabled=false;}
 }
 function show(id,b){document.querySelectorAll("#app section").forEach(x=>x.classList.add("hidden"));document.getElementById(id).classList.remove("hidden");document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active")}
 async function saveSettings(){D.settings.name=sname.value||"MAX SHOP";D.settings.whatsapp=swa.value.replace(/\D/g,"");D.settings.email=document.getElementById("semail").value.trim();D.settings.currency=scur.value||"₦";D.settings.hero=shero.value;D.settings.paymentInfo=document.getElementById("spay").value||"";try{await put();alert("Settings saved to the server.")}catch(e){alert(e.message)}}
