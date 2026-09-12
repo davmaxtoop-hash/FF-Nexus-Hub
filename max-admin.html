@@ -29,7 +29,7 @@ header{border-bottom:1px solid #272b35;padding:16px 20px}.bar{max-width:1150px;m
 
 <div id="login" class="panel login">
 <h2>Admin Login</h2>
-<form id="maxShopLoginForm" onsubmit="login(event)"><input id="pass" type="password" placeholder="Admin password" autocomplete="current-password" style="width:100%;padding:12px;background:#090b10;color:#fff;border:1px solid #303440;border-radius:10px"><br><br><button id="maxShopLoginBtn" class="btn gold" type="submit">Enter Dashboard</button><div id="maxShopLoginStatus" style="margin-top:10px;color:#e7c879;font-size:13px;min-height:18px"></div></form>
+<form id="maxShopLoginForm" onsubmit="return maxShopLogin(event)"><input id="pass" type="password" placeholder="Admin password" autocomplete="current-password" style="width:100%;padding:12px;background:#090b10;color:#fff;border:1px solid #303440;border-radius:10px"><br><br><button id="maxShopLoginBtn" class="btn gold" type="submit">Enter Dashboard</button><div id="maxShopLoginStatus" style="margin-top:10px;color:#e7c879;font-size:13px;min-height:18px"></div></form>
 </div>
 
 <div id="app" class="wrap hidden">
@@ -123,7 +123,7 @@ async function put(){
   const r=await fetch("/api/maxshop/admin/data",{method:"PUT",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({data:D})});
   const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error(j.error||"Could not save MAX SHOP data."); render();
 }
-async function login(event){
+async function maxShopLogin(event){
   if(event) event.preventDefault();
   const input=document.getElementById("pass");
   const btn=document.getElementById("maxShopLoginBtn");
@@ -149,6 +149,15 @@ async function login(event){
     if(status) status.textContent=e.message||"Login failed. Check Railway deployment and variables.";
   }finally{if(btn)btn.disabled=false;}
 }
+document.addEventListener("DOMContentLoaded",()=>{
+  const form=document.getElementById("maxShopLoginForm");
+  if(form){form.addEventListener("submit",maxShopLogin,{passive:false});}
+  const btn=document.getElementById("maxShopLoginBtn");
+  if(btn){btn.addEventListener("click",e=>{e.preventDefault(); if(form) form.requestSubmit();});}
+});
+
+window.maxShopLogin = maxShopLogin;
+
 function show(id,b){document.querySelectorAll("#app section").forEach(x=>x.classList.add("hidden"));document.getElementById(id).classList.remove("hidden");document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active")}
 async function saveSettings(){D.settings.name=sname.value||"MAX SHOP";D.settings.whatsapp=swa.value.replace(/\D/g,"");D.settings.email=document.getElementById("semail").value.trim();D.settings.currency=scur.value||"₦";D.settings.hero=shero.value;D.settings.paymentInfo=document.getElementById("spay").value||"";try{await put();alert("Settings saved to the server.")}catch(e){alert(e.message)}}
 function renderBase(){
