@@ -596,14 +596,24 @@ function socialIconSvg(type){
 function closeWhatsAppSocialMenu(){document.querySelectorAll('.whatsapp-menu').forEach(x=>x.remove());}
 function openWhatsAppSocialMenu(anchor,numbers){
   closeWhatsAppSocialMenu();
-  const menu=document.createElement('div'); menu.className='whatsapp-menu';
-  menu.innerHTML='<h4>Choose WhatsApp</h4>'+numbers.map((n,i)=>`<a href="${escapePublic(whatsappHref(n))}" target="_blank" rel="noopener">WhatsApp ${i+1}<span>${escapePublic(n)}</span></a>`).join('');
+  const valid=(Array.isArray(numbers)?numbers:[]).map(normalizeWhatsAppNumber).filter(Boolean).slice(0,3);
+  if(!valid.length){showToast('WhatsApp is not configured yet.');return;}
+  // Use a fixed, high-z-index chooser so it works reliably on mobile browsers.
+  const menu=document.createElement('div');
+  menu.className='whatsapp-menu';
+  menu.setAttribute('role','dialog');
+  menu.setAttribute('aria-label','Choose WhatsApp number');
+  menu.innerHTML='<div class="whatsapp-menu-title">Choose WhatsApp</div>'+valid.map((n,i)=>`<button type="button" class="whatsapp-choice" data-wa="${escapeAdminText(n)}">WhatsApp ${i+1}<span>${escapePublic(n)}</span></button>`).join('')+'<button type="button" class="whatsapp-menu-close">Cancel</button>';
   document.body.appendChild(menu);
+  menu.querySelectorAll('.whatsapp-choice').forEach(btn=>btn.addEventListener('click',()=>{
+    const href=whatsappHref(btn.dataset.wa);
+    if(href) window.open(href,'_blank','noopener,noreferrer');
+    menu.remove();
+  }));
+  menu.querySelector('.whatsapp-menu-close')?.addEventListener('click',()=>menu.remove());
   const r=anchor.getBoundingClientRect();
-  const left=Math.min(Math.max(12,r.left),window.innerWidth-menu.offsetWidth-12);
-  const top=Math.max(12,r.top-menu.offsetHeight-10);
-  menu.style.left=left+'px';menu.style.top=top+'px';
-  setTimeout(()=>document.addEventListener('click',function handler(e){if(!menu.contains(e.target)&&e.target!==anchor){menu.remove();document.removeEventListener('click',handler)}},{once:true}),0);
+  menu.style.left=Math.max(12,Math.min(r.left,window.innerWidth-menu.offsetWidth-12))+'px';
+  menu.style.top=Math.max(12,Math.min(r.top-menu.offsetHeight-10,window.innerHeight-menu.offsetHeight-12))+'px';
 }
 function renderFooterSocialLinks(){
   const root=document.getElementById('footerSocials'); if(!root)return;
