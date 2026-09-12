@@ -28,12 +28,11 @@ header{border-bottom:1px solid #272b35;padding:16px 20px}.bar{max-width:1150px;m
 <header><div class="bar"><div class="logo">MAX <span>SHOP</span> ADMIN</div><a class="btn dark" href="/max-shop/store/">View Shop</a></div></header>
 
 <div id="login" class="panel login">
-<h2>Admin Login</h2><p style="color:#9da3b3">Use the MAX SHOP admin password configured in Railway as <b>MAXSHOP_ADMIN_PASSWORD</b>.</p>
+<h2>Admin Login</h2>
 <form id="maxShopLoginForm" onsubmit="login(event)"><input id="pass" type="password" placeholder="Admin password" autocomplete="current-password" style="width:100%;padding:12px;background:#090b10;color:#fff;border:1px solid #303440;border-radius:10px"><br><br><button id="maxShopLoginBtn" class="btn gold" type="submit">Enter Dashboard</button><div id="maxShopLoginStatus" style="margin-top:10px;color:#e7c879;font-size:13px;min-height:18px"></div></form>
 </div>
 
 <div id="app" class="wrap hidden">
-<div class="notice">MAX SHOP admin is server-backed. Changes are stored in the shared database and appear on the public shop for every visitor. Keep your admin password private.</div>
 <div class="tabs">
 <button class="tab active" onclick="show('settings',this)">⚙️ Store Settings</button>
 <button class="tab" onclick="show('topups',this)">💎 Diamond Prices</button>
@@ -156,6 +155,7 @@ sname.value=D.settings.name;swa.value=D.settings.whatsapp;if(document.getElement
 topupList.innerHTML=D.topups.map((x,i)=>`<div class="row"><div><b>${esc(x.name)}</b><br><span style="color:#ffc247">${esc(D.settings.currency)}${Number(x.price).toLocaleString()}</span> <span class="pill ${x.active?'':'off'}">${x.active?'Visible':'Hidden'}</span></div><div class="actions"><button class="btn dark" onclick="editTop(${i})">Edit</button><button class="btn dark" onclick="toggleTop(${i})">${x.active?'Hide':'Show'}</button><button class="btn red" onclick="delTop(${i})">Delete</button></div></div>`).join("")||"<p>No packages.</p>";
 accountList.innerHTML=D.accounts.map((x,i)=>`<div class="row"><div style="display:flex;gap:12px;align-items:center">${x.image?`<img class="preview" src="${x.image}" alt="">`:`<div class="preview">🎮</div>`}<div><b>${esc(x.name)}</b><br><span style="color:#ffc247">${esc(D.settings.currency)}${Number(x.price).toLocaleString()}</span> <span class="pill ${x.active?'':'off'}">${x.active?'Visible':'Hidden'}</span> <span class="pill ${x.sold?'off':''}">${x.sold?'SOLD':'Available'}</span><br><span class="muted small">Delivery: ${x.deliveryEnabled===false?'Off':'On'} • Credentials: ${x.email||x.password?'Saved':'Not set'}</span></div></div><div class="actions"><button class="btn dark" onclick="editAccount(${i})">Edit / Control</button><button class="btn dark" onclick="toggleAcc(${i})">${x.active?'Hide':'Show'}</button><button class="btn dark" onclick="toggleSold(${i})">${x.sold?'Mark Available':'Mark Sold'}</button><button class="btn red" onclick="delAcc(${i})">Delete</button></div></div>`).join("")||"<p>No accounts yet. Click + Add Account.</p>";
 }
+function render(){renderBase();}
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 
 async function newTopup(){let n=prompt("Package name:","New Diamonds");if(!n)return;let p=prompt("Price:","1000");if(p===null)return;D.topups.push({id:Date.now(),name:n,price:Number(p)||0,active:true});try{await put()}catch(e){alert(e.message)}}
