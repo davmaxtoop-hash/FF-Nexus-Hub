@@ -106,6 +106,8 @@ const defaults={settings:{name:"MAX SHOP",hero:"Top-ups and gaming accounts in o
 {id:1,name:"100 Diamonds",price:1000,active:true},{id:2,name:"310 Diamonds",price:3000,active:true},{id:3,name:"520 Diamonds",price:5000,active:true},{id:4,name:"1,060 Diamonds",price:10000,active:true},{id:5,name:"2,180 Diamonds",price:20000,active:true},{id:6,name:"5,600 Diamonds",price:50000,active:true},{id:7,name:"11,500 Diamonds",price:100000,active:true}],accounts:[],orders:[],reviews:[]};
 
 let D=null, editingIndex=-1, selectedImage="";
+const $=id=>document.getElementById(id);
+const loginEl=$("login"), app=$("app"), sname=$("sname"), swa=$("swa"), semail=$("semail"), scur=$("scur"), shero=$("shero"), spay=$("spay"), topupList=$("topupList"), accountList=$("accountList"), accountModal=$("accountModal"), imageFile=$("imageFile"), imagePreview=$("imagePreview"), uploadName=$("uploadName"), dz=$("dropZone"), aName=$("aName"), aPrice=$("aPrice"), aDesc=$("aDesc"), aEmail=$("aEmail"), aPassword=$("aPassword"), aUid=$("aUid"), aDelivery=$("aDelivery");
 
 function clone(x){return JSON.parse(JSON.stringify(x))}
 async function get(){
@@ -181,7 +183,7 @@ const reader=new FileReader();
 reader.onload=()=>{selectedImage=reader.result;imagePreview.src=selectedImage;imagePreview.classList.add("show");uploadName.textContent=file.name+" • "+Math.round(file.size/1024)+" KB"};
 reader.readAsDataURL(file);
 }
-const dz=document.getElementById("dropZone");
+// dropZone reference is declared with the other element references above.
 ["dragenter","dragover"].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add("drag")}));
 ["dragleave","drop"].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove("drag")}));
 dz.addEventListener("drop",e=>{if(e.dataTransfer.files.length){imageFile.files=e.dataTransfer.files;handleFile({target:imageFile})}});
@@ -216,7 +218,6 @@ function exportData(){let blob=new Blob([JSON.stringify(D,null,2)],{type:"applic
 function importData(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=async()=>{try{D=JSON.parse(r.result);await put();alert("Imported to server.")}catch(err){alert(err.message||"Invalid JSON file.")}};r.readAsText(f)}
 async function resetData(){if(confirm("Reset all shop data?")){D=clone(defaults);try{await put()}catch(e){alert(e.message)}}}
 
-const loginEl=document.getElementById("login"),app=document.getElementById("app");
 (async()=>{if(sessionStorage.getItem("maxshop_admin_token")){try{D=await get();loginEl.classList.add("hidden");app.classList.remove("hidden");render();await renderOrdersReviews()}catch(e){sessionStorage.removeItem("maxshop_admin_token")}}})();
 </script>
 </body>
