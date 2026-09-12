@@ -12,6 +12,7 @@ const JWT_SECRET = process.env.JWT_SECRET || '';
 const CONFIGURED_ADMIN_PASSWORD = normalizeAdminPassword(process.env.ADMIN_PASSWORD || '');
 // Local/offline-friendly password. For production, set ADMIN_PASSWORD in Railway.
 const ADMIN_PASSWORD = CONFIGURED_ADMIN_PASSWORD || 'Max is king';
+const MAXSHOP_ADMIN_PASSWORD = normalizeAdminPassword(process.env.MAXSHOP_ADMIN_PASSWORD || ADMIN_PASSWORD);
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || '';
 const PAYSTACK_PUBLIC_KEY = process.env.PAYSTACK_PUBLIC_KEY || 'pk_test_aa24b40e2dc0408ac5cdc038b117f6dd191d5a3c';
 const APP_URL = process.env.APP_URL || '';
@@ -34,6 +35,10 @@ app.set('trust proxy', 1);
 
 app.use(express.json({ limit: '8mb', verify: (req,res,buf)=>{ req.rawBody=buf; } }));
 app.use(express.static(__dirname));
+// MAX SHOP public/admin entry routes (kept separate from Nexus Hub root files).
+app.get('/max-shop/', (req,res)=>res.sendFile(path.join(__dirname,'max-shop','max-index.html')));
+app.get('/max-shop/admin/', (req,res)=>res.sendFile(path.join(__dirname,'max-shop','max-admin.html')));
+
 
 let sql = null;
 let dbInitialized = false;
@@ -106,6 +111,37 @@ async function initDb(){
     paid_at TIMESTAMPTZ
   )`;
   await sql`CREATE INDEX IF NOT EXISTS support_payments_status_idx ON support_payments(status)`;
+  await sql`CREATE TABLE IF NOT EXISTS maxshop_content (
+    id INTEGER PRIMARY KEY DEFAULT 1,
+    data JSONB NOT NULL DEFAULT '{}'::jsonb,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`;
+  await sql`CREATE TABLE IF NOT EXISTS maxshop_orders (
+    id BIGSERIAL PRIMARY KEY,
+    order_type TEXT NOT NULL DEFAULT 'diamond_topup',
+    package_name TEXT NOT NULL,
+    amount NUMERIC NOT NULL,
+    customer_name TEXT DEFAULT '',
+    phone TEXT DEFAULT '',
+    email TEXT DEFAULT '',
+    uid TEXT NOT NULL,
+    payment_reference TEXT NOT NULL UNIQUE,
+    payment_status TEXT NOT NULL DEFAULT 'Payment Pending',
+    fulfillment_status TEXT NOT NULL DEFAULT 'Awaiting Payment',
+    provider_reference TEXT DEFAULT '',
+    provider_message TEXT DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    paid_at TIMESTAMPTZ,
+    fulfilled_at TIMESTAMPTZ,
+    provider_order_code TEXT DEFAULT '',
+    provider_product_id TEXT DEFAULT '',
+    idempotency_key TEXT DEFAULT ''
+  )`;
+  await sql`ALTER TABLE maxshop_orders ADD COLUMN IF NOT EXISTS provider_order_code TEXT DEFAULT ''`;
+  await sql`ALTER TABLE maxshop_orders ADD COLUMN IF NOT EXISTS provider_product_id TEXT DEFAULT ''`;
+  await sql`ALTER TABLE maxshop_orders ADD COLUMN IF NOT EXISTS idempotency_key TEXT DEFAULT ''`;
+  await sql`CREATE INDEX IF NOT EXISTS maxshop_orders_status_idx ON maxshop_orders(payment_status, fulfillment_status)`;
+
   await sql`CREATE TABLE IF NOT EXISTS tournament_registrations_db (
     id BIGSERIAL PRIMARY KEY,
     player_id BIGINT NOT NULL REFERENCES player_accounts(id) ON DELETE CASCADE,
@@ -377,6 +413,148 @@ async function finalizePaystackPayment(reference){
   return {found:true,paid:true,tx};
 }
 
+
+async function fulfillMaxShopOrder(order){
+  const apiKey=String(process.env.GAMECORE_API_KEY||'').trim();
+  const baseUrl=String(process.env.GAMECORE_BASE_URL||'https://api.gamecore-api.tech').trim().replace(/\/$/,'');
+  if(!apiKey) return {ok:false,pending:true,message:'Payment confirmed. Free Fire delivery is waiting for the GameCore API key.'};
+  try{
+    const cat=await fetch(`${baseUrl}/b2b/catalog/games/free-fire/products?deliveryType=id_only`,{headers:{'X-Api-Key':apiKey}});
+    const catalog=await cat.json().catch(()=>({}));
+    if(!cat.ok || catalog.success===false) return {ok:false,pending:true,message:catalog.error||'Could not load Free Fire top-up products from GameCore.'};
+    const products=Array.isArray(catalog.data)?catalog.data:[];
+    const digits=String(order.package_name||'').replace(/[^0-9]/g,'');
+    const wanted=Number(digits);
+    const product=products.find(p=>Number(p?.amountType?.value)===wanted) || products.find(p=>String(p?.name||'').toLowerCase().includes(String(wanted)));
+    if(!product) return {ok:false,pending:true,message:`GameCore has no matching Free Fire product for ${order.package_name}.`};
+    const schema=Array.isArray(product.deliveryDataSchema)?product.deliveryDataSchema:[];
+    const idField=schema.find(x=>x?.required)?.id || schema[0]?.id;
+    if(!idField) return {ok:false,pending:true,message:'GameCore did not provide a Player ID field for this product.'};
+    const idem=String(order.idempotency_key||`MAX-${order.payment_reference}`);
+    const r=await fetch(`${baseUrl}/b2b/orders`,{method:'POST',headers:{'Content-Type':'application/json','X-Api-Key':apiKey,'X-Idempotency-Key':idem},body:JSON.stringify({items:[{productId:Number(product.id),quantity:1,deliveryData:{[idField]:String(order.uid)}}],externalOrderId:String(order.payment_reference)})});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok || data.success===false) return {ok:false,pending:true,message:data.error||data.message||`GameCore rejected the top-up (${r.status}).`};
+    const code=String(data?.data?.orders?.[0]?.code||'');
+    if(!code) return {ok:false,pending:true,message:'GameCore accepted the request but returned no order code.'};
+    return {ok:true,processing:true,providerReference:code,productId:String(product.id),message:'GameCore accepted the Free Fire top-up. Waiting for delivery confirmation.'};
+  }catch(e){ return {ok:false,pending:true,message:'GameCore could not be reached. The paid order is safe and can be retried.'}; }
+}
+
+async function pollGameCoreOrder(order){
+  const apiKey=String(process.env.GAMECORE_API_KEY||'').trim();
+  const baseUrl=String(process.env.GAMECORE_BASE_URL||'https://api.gamecore-api.tech').trim().replace(/\/$/,'');
+  const code=String(order.provider_order_code||'').trim();
+  if(!apiKey || !code) return;
+  try{
+    const r=await fetch(`${baseUrl}/b2b/orders/${encodeURIComponent(code)}`,{headers:{'X-Api-Key':apiKey}});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok || data.success===false) return;
+    const status=String(data?.data?.status||'').toLowerCase();
+    if(status==='completed') await sql`UPDATE maxshop_orders SET fulfillment_status='Fulfilled',provider_message='Free Fire diamonds delivered successfully.',fulfilled_at=NOW() WHERE id=${order.id}`;
+    else if(['failed','cancelled','refunded'].includes(status)) await sql`UPDATE maxshop_orders SET fulfillment_status='Delivery Failed',provider_message=${`GameCore status: ${status}`} WHERE id=${order.id}`;
+  }catch(e){}
+}
+
+async function processPendingGameCoreOrders(){
+  try{ const rows=await sql`SELECT * FROM maxshop_orders WHERE payment_status='Paid' AND fulfillment_status='Processing Top Up' AND provider_order_code<>'' ORDER BY id ASC LIMIT 20`; for(const row of rows) await pollGameCoreOrder(row); }catch(e){ console.error('GameCore poll:',e.message||e); }
+}
+
+
+app.post('/api/maxshop/admin/login',(req,res)=>{
+  const password=normalizeAdminPassword(req.body?.password||'');
+  if(!JWT_SECRET || !MAXSHOP_ADMIN_PASSWORD) return res.status(503).json({error:'MAX SHOP admin authentication is not configured. Add JWT_SECRET and MAXSHOP_ADMIN_PASSWORD to Railway.'});
+  if(password!==MAXSHOP_ADMIN_PASSWORD) return res.status(401).json({error:'Wrong MAX SHOP admin password.'});
+  res.json({ok:true,token:signMaxShopAdmin()});
+});
+
+app.get('/api/maxshop/data', requireDb, async (req,res)=>{
+  try{ const rows=await sql`SELECT data,updated_at FROM maxshop_content WHERE id=1 LIMIT 1`; const data=rows[0]?.data || defaultMaxShopData(); res.set('Cache-Control','no-store'); res.json({data,updatedAt:rows[0]?.updated_at||null}); }
+  catch(e){res.status(500).json({error:'Could not load MAX SHOP data.'});}
+});
+
+app.put('/api/maxshop/admin/data', requireDb, maxShopAdminAuth, async (req,res)=>{
+  try{ const data=req.body?.data; if(!data || typeof data!=='object' || Array.isArray(data)) return res.status(400).json({error:'Invalid MAX SHOP data.'}); const serialized=JSON.stringify(data); if(Buffer.byteLength(serialized,'utf8')>7*1024*1024) return res.status(413).json({error:'MAX SHOP data is too large. Reduce image sizes.'});
+    await sql`INSERT INTO maxshop_content(id,data,updated_at) VALUES(1,${data},NOW()) ON CONFLICT(id) DO UPDATE SET data=EXCLUDED.data,updated_at=NOW()`; res.json({ok:true});
+  }catch(e){console.error('MAX SHOP admin save:',e);res.status(500).json({error:'Could not save MAX SHOP data.'});}
+});
+
+app.get('/api/maxshop/admin/orders', requireDb, maxShopAdminAuth, async (req,res)=>{
+  try{ const rows=await sql`SELECT id,package_name,amount,customer_name,phone,email,uid,payment_reference,payment_status,fulfillment_status,provider_reference,provider_message,created_at,paid_at,fulfilled_at FROM maxshop_orders ORDER BY id DESC LIMIT 200`; res.json({orders:rows}); }catch(e){res.status(500).json({error:'Could not load MAX SHOP orders.'});}
+});
+
+app.post('/api/maxshop/admin/orders/:id/retry', requireDb, maxShopAdminAuth, async (req,res)=>{
+  try{ const rows=await sql`SELECT * FROM maxshop_orders WHERE id=${Number(req.params.id)} LIMIT 1`; if(!rows.length)return res.status(404).json({error:'Order not found.'}); const order=rows[0]; if(order.payment_status!=='Paid')return res.status(400).json({error:'Only paid orders can be retried.'}); await sql`UPDATE maxshop_orders SET fulfillment_status='Processing Top Up',provider_message='Delivery retry queued by MAX SHOP admin.' WHERE id=${order.id}`; const current=(await sql`SELECT * FROM maxshop_orders WHERE id=${order.id}`)[0]; const delivery=await fulfillMaxShopOrder(current); if(delivery.ok){ await sql`UPDATE maxshop_orders SET fulfillment_status=${delivery.processing?'Processing Top Up':'Fulfilled'},provider_reference=${delivery.providerReference||''},provider_order_code=${delivery.providerReference||''},provider_product_id=${delivery.productId||''},idempotency_key=COALESCE(NULLIF(idempotency_key,''),${`MAX-${order.payment_reference}-RETRY`}),provider_message=${delivery.message||''},fulfilled_at=${delivery.processing?null:new Date()} WHERE id=${order.id}`; } else { await sql`UPDATE maxshop_orders SET fulfillment_status='Awaiting Provider',provider_message=${delivery.message||'Provider unavailable.'} WHERE id=${order.id}`; } res.json({ok:true}); }catch(e){console.error('MAX SHOP retry:',e);res.status(500).json({error:'Could not retry delivery.'});}
+});
+
+app.post('/api/maxshop/reviews', requireDb, async (req,res)=>{
+  try{ const name=String(req.body?.name||'').trim().slice(0,80), purchaseType=String(req.body?.purchaseType||'Purchase').slice(0,50), text=String(req.body?.text||'').trim().slice(0,1000), rating=Math.max(1,Math.min(5,Number(req.body?.rating||5))); if(!name||!text)return res.status(400).json({error:'Name and review are required.'}); const rows=await sql`SELECT data FROM maxshop_content WHERE id=1 LIMIT 1`; const d=rows[0]?.data||defaultMaxShopData(); d.reviews=Array.isArray(d.reviews)?d.reviews:[]; d.reviews.push({id:'REV-'+Date.now(),name,purchaseType,rating,text,approved:true,createdAt:new Date().toISOString()}); await sql`INSERT INTO maxshop_content(id,data,updated_at) VALUES(1,${d},NOW()) ON CONFLICT(id) DO UPDATE SET data=EXCLUDED.data,updated_at=NOW()`; res.status(201).json({ok:true}); }catch(e){res.status(500).json({error:'Could not submit review.'});}
+});
+
+app.post('/api/maxshop/paystack/initialize', requireDb, async (req,res)=>{
+  try{
+    if(!PAYSTACK_SECRET_KEY) return res.status(503).json({error:'Paystack is not configured. Add PAYSTACK_SECRET_KEY on the Nexus Hub server.'});
+    const b=req.body||{};
+    const amount=Math.round(Number(b.amount));
+    const uid=String(b.uid||'').trim();
+    const packageName=String(b.packageName||'Free Fire Top Up').trim();
+    const email=String(b.email||'').trim().toLowerCase();
+    if(!Number.isFinite(amount)||amount<1) return res.status(400).json({error:'Invalid amount.'});
+    if(!uid) return res.status(400).json({error:'Free Fire UID is required.'});
+    if(!email || !email.includes('@')) return res.status(400).json({error:'A valid email is required for Paystack receipt.'});
+    const reference=`MAXSHOP_${Date.now()}_${crypto.randomBytes(5).toString('hex').toUpperCase()}`;
+    await sql`INSERT INTO maxshop_orders (package_name,amount,customer_name,phone,email,uid,payment_reference) VALUES (${packageName},${amount},${String(b.customerName||'')},${String(b.phone||'')},${email},${uid},${reference})`;
+    const base=APP_URL || `${req.protocol}://${req.get('host')}`;
+    const ps=await fetch('https://api.paystack.co/transaction/initialize',{method:'POST',headers:{Authorization:`Bearer ${PAYSTACK_SECRET_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({email,amount:String(amount*100),currency:'NGN',reference,callback_url:`${base}/max-shop/paystack/callback`,metadata:{maxshop_order:true,reference,uid,packageName}})});
+    const result=await ps.json();
+    if(!ps.ok||!result.status){ await sql`UPDATE maxshop_orders SET payment_status='Payment Initialization Failed' WHERE payment_reference=${reference}`; return res.status(502).json({error:result.message||'Could not initialize Paystack payment.'}); }
+    res.status(201).json({reference:result.data.reference,authorization_url:result.data.authorization_url,access_code:result.data.access_code,publicKey:PAYSTACK_PUBLIC_KEY});
+  }catch(e){console.error('MAX SHOP Paystack init:',e);res.status(500).json({error:e.message||'Could not start payment.'});}
+});
+
+async function finalizeMaxShopPayment(reference){
+  const tx=await verifyPaystack(reference);
+  const rows=await sql`SELECT * FROM maxshop_orders WHERE payment_reference=${reference} LIMIT 1`;
+  if(!rows.length) throw new Error('MAX SHOP order not found.');
+  const order=rows[0];
+  const expected=Math.round(Number(order.amount)*100);
+  if(tx.status!=='success' || Number(tx.amount)!==expected || String(tx.currency||'').toUpperCase()!=='NGN'){
+    await sql`UPDATE maxshop_orders SET payment_status='Payment Failed' WHERE id=${order.id}`;
+    return {paid:false,order};
+  }
+  await sql`UPDATE maxshop_orders SET payment_status='Paid',fulfillment_status=CASE WHEN fulfillment_status='Fulfilled' THEN fulfillment_status ELSE 'Processing Top Up' END,paid_at=COALESCE(paid_at,NOW()) WHERE id=${order.id}`;
+  const current=(await sql`SELECT * FROM maxshop_orders WHERE id=${order.id}`)[0];
+  if(current.fulfillment_status!=='Fulfilled'){
+    const delivery=await fulfillMaxShopOrder(current);
+    if(delivery.ok){
+      const fs=delivery.processing?'Processing Top Up':'Fulfilled';
+      if(delivery.processing){
+        await sql`UPDATE maxshop_orders SET fulfillment_status=${fs},provider_reference=${delivery.providerReference||''},provider_order_code=${delivery.providerReference||''},provider_product_id=${delivery.productId||''},idempotency_key=COALESCE(NULLIF(idempotency_key,''),${`MAX-${reference}`}),provider_message=${delivery.message||''} WHERE id=${order.id}`;
+      }else{
+        await sql`UPDATE maxshop_orders SET fulfillment_status=${fs},provider_reference=${delivery.providerReference||''},provider_order_code=${delivery.providerReference||''},provider_product_id=${delivery.productId||''},idempotency_key=COALESCE(NULLIF(idempotency_key,''),${`MAX-${reference}`}),provider_message=${delivery.message||''},fulfilled_at=NOW() WHERE id=${order.id}`;
+      }
+      current.fulfillment_status=fs; current.provider_reference=delivery.providerReference||''; current.provider_order_code=delivery.providerReference||''; current.provider_message=delivery.message||'';
+    }else{
+      await sql`UPDATE maxshop_orders SET fulfillment_status='Awaiting Provider',provider_message=${delivery.message||''},idempotency_key=COALESCE(NULLIF(idempotency_key,''),${`MAX-${reference}`}) WHERE id=${order.id}`;
+      current.fulfillment_status='Awaiting Provider'; current.provider_message=delivery.message||'';
+    }
+  }
+  return {paid:true,order:current};
+}
+
+app.get('/max-shop/paystack/callback', requireDb, async (req,res)=>{
+  const reference=String(req.query.reference||'');
+  if(!reference) return res.redirect('/max-shop/?payment=failed');
+  try{const result=await finalizeMaxShopPayment(reference);res.redirect(result.paid?`/max-shop/?payment=success&reference=${encodeURIComponent(reference)}`:`/max-shop/?payment=failed&reference=${encodeURIComponent(reference)}`);}catch(e){console.error('MAX SHOP callback:',e);res.redirect('/max-shop/?payment=failed');}
+});
+
+app.get('/api/maxshop/orders/:reference', requireDb, async (req,res)=>{
+  try{
+    const rows=await sql`SELECT payment_reference,package_name,amount,uid,payment_status,fulfillment_status,provider_message,created_at,paid_at,fulfilled_at FROM maxshop_orders WHERE payment_reference=${String(req.params.reference)} LIMIT 1`;
+    if(!rows.length)return res.status(404).json({error:'Order not found.'});
+    res.json({order:rows[0]});
+  }catch(e){res.status(500).json({error:'Could not load order.'});}
+});
+
 app.get('/paystack/callback', requireDb, async (req,res)=>{
   try{
     const reference=String(req.query.reference||'').trim();
@@ -401,6 +579,7 @@ app.post('/api/paystack/webhook', requireDb, async (req,res)=>{
       try{
         const ref=String(req.body.data.reference);
         if(ref.startsWith('FFNEXUS_SUPPORT_')) await finalizeSupportPayment(ref);
+        else if(ref.startsWith('MAXSHOP_')) await finalizeMaxShopPayment(ref);
         else await finalizePaystackPayment(ref);
       }catch(e){console.error('Paystack webhook processing error:',e);}
     }

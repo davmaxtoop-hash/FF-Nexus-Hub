@@ -1,0 +1,21 @@
+MAX SHOP — AUTOMATIC FREE FIRE TOP-UP
+
+Flow:
+Customer enters Free Fire UID -> selects diamonds -> Paystack payment -> server verifies Paystack -> GameCore creates UID top-up -> server polls delivery status -> order becomes Fulfilled when GameCore reports completed.
+
+Provider used by this build: GameCore B2B direct UID top-up. Their documentation describes Free Fire as an id_only product flow and requires a server-side X-Api-Key.
+
+Railway environment variable required:
+GAMECORE_API_KEY=your_live_gamecore_api_key
+
+Optional:
+GAMECORE_BASE_URL=https://api.gamecore-api.tech
+
+The MAX SHOP package names are matched to GameCore Free Fire products by the diamond amount (for example 100 Diamonds -> product whose amountType.value is 100). The product's deliveryDataSchema is read before ordering so the correct Player ID field is used.
+
+IMPORTANT:
+1. A real GameCore account/API key is required. The ZIP cannot contain a real provider credential.
+2. Your GameCore account must have Free Fire UID top-up products available for your region.
+3. Paystack payment does not itself deliver diamonds; GameCore is the fulfillment provider.
+4. Buyers must confirm their UID because a wrong UID can receive the top-up and may not be reversible.
+5. Never put GAMECORE_API_KEY in index.html or other frontend files.
