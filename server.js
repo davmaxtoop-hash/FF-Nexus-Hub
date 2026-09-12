@@ -178,6 +178,23 @@ function adminAuth(req,res,next){
     next();
   }catch(e){ return res.status(401).json({error:'Admin session expired. Please log in again.'}); }
 }
+function signMaxShopAdmin(){
+  if(!JWT_SECRET) throw new Error('JWT_SECRET is not configured on the server.');
+  return jwt.sign({role:'maxshop_admin'}, JWT_SECRET, {expiresIn:'12h'});
+}
+function maxShopAdminAuth(req,res,next){
+  if(!JWT_SECRET || !MAXSHOP_ADMIN_PASSWORD) return res.status(503).json({error:'MAX SHOP admin authentication is not configured. Add JWT_SECRET and MAXSHOP_ADMIN_PASSWORD to Railway.'});
+  const h=req.headers.authorization||'';
+  const token=h.startsWith('Bearer ')?h.slice(7):'';
+  if(!token) return res.status(401).json({error:'MAX SHOP admin login required.'});
+  try{
+    const payload=jwt.verify(token,JWT_SECRET);
+    if(payload.role!=='maxshop_admin') throw new Error('Invalid MAX SHOP admin role.');
+    req.maxShopAdmin=payload;
+    next();
+  }catch(e){ return res.status(401).json({error:'MAX SHOP admin session expired. Please log in again.'}); }
+}
+
 function auth(req,res,next){
   if(!JWT_SECRET) return res.status(503).json({error:'JWT_SECRET is not configured on the server.'});
   const h=req.headers.authorization||''; const token=h.startsWith('Bearer ')?h.slice(7):'';
