@@ -62,6 +62,10 @@ function normalizeRouteSegment(value){
   return s || 'secure-portal-7k4m';
 }
 
+// Private embedded MAX SHOP admin document. It is not linked publicly; the page itself still requires MAX SHOP admin authentication.
+app.get(['/max-shop/admin-embed','/max-shop/admin-embed/'],
+  (req,res)=>res.sendFile(path.join(__dirname,'max-shop','max-admin.html')));
+
 // Deliberately do not expose the old predictable admin URLs.
 app.get(['/max-shop/admin','/max-shop/admin/','/max-shop/admin.html','/max-shop/max-admin.html'],
   (req,res)=>res.status(404).send('Not found'));
