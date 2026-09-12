@@ -29,8 +29,7 @@ header{border-bottom:1px solid #272b35;padding:16px 20px}.bar{max-width:1150px;m
 
 <div id="login" class="panel login">
 <h2>Admin Login</h2><p style="color:#9da3b3">Use the MAX SHOP admin password configured in Railway as <b>MAXSHOP_ADMIN_PASSWORD</b>.</p>
-<input id="pass" type="password" placeholder="Admin password" style="width:100%;padding:12px;background:#090b10;color:#fff;border:1px solid #303440;border-radius:10px">
-<br><br><button class="btn gold" onclick="login()">Enter Dashboard</button>
+<form id="maxShopLoginForm" onsubmit="login(event)"><input id="pass" type="password" placeholder="Admin password" autocomplete="current-password" style="width:100%;padding:12px;background:#090b10;color:#fff;border:1px solid #303440;border-radius:10px"><br><br><button id="maxShopLoginBtn" class="btn gold" type="submit">Enter Dashboard</button><div id="maxShopLoginStatus" style="margin-top:10px;color:#e7c879;font-size:13px;min-height:18px"></div></form>
 </div>
 
 <div id="app" class="wrap hidden">

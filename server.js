@@ -66,6 +66,9 @@ function normalizeRouteSegment(value){
 app.get(['/max-shop/admin','/max-shop/admin/','/max-shop/admin.html','/max-shop/max-admin.html'],
   (req,res)=>res.status(404).send('Not found'));
 
+app.get(['/max-shop/admin-panel','/max-shop/admin-panel/'],
+  (req,res)=>res.sendFile(path.join(__dirname,'max-shop','max-admin.html')));
+
 app.get([`/max-shop/${MAXSHOP_ADMIN_PATH}`, `/max-shop/${MAXSHOP_ADMIN_PATH}/`], (req,res)=>
   res.sendFile(path.join(__dirname,'max-shop','max-admin.html'))
 );

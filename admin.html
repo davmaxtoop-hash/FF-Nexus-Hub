@@ -209,7 +209,7 @@ const MAX_SHOP_ADMIN_EMBED_HTML="<!doctype html>\n<html lang=\"en\">\n<head><bas
 function openMaxShopAdmin(){
   const frame=document.getElementById('maxShopAdminFrame');
   if(!frame)return;
-  if(!frame.srcdoc) frame.srcdoc=MAX_SHOP_ADMIN_EMBED_HTML;
+  if(frame.getAttribute('src')!=="/max-shop/admin-panel/") frame.src="/max-shop/admin-panel/";
 }
 (function(){
   const KEY="ff_nexus_hub_admin_data";
