@@ -55,3 +55,13 @@ SECURITY NOTES
 - Use a strong random JWT_SECRET.
 - Change the default LISTING_FEE_NGN if your actual business fee is different.
 - The project is a Free Fire community concept and is not affiliated with Garena.
+
+
+MAX SHOP ROUTES
+- Public introduction: /max-shop/
+- Actual shop: /max-shop/store/
+- MAX SHOP admin: /max-shop/secure-portal-7k4m/ by default
+- There is no public Admin link/button on the Nexus Hub or MAX SHOP pages.
+- The old /max-shop/admin/ and admin HTML URLs return 404.
+- Admin still requires MAXSHOP_ADMIN_PASSWORD plus JWT_SECRET.
+- Optional Railway variable MAXSHOP_ADMIN_PATH can replace "secure-portal-7k4m" with your own path segment.

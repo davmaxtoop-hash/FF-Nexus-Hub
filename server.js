@@ -34,10 +34,41 @@ function normalizeAdminPassword(value){
 app.set('trust proxy', 1);
 
 app.use(express.json({ limit: '8mb', verify: (req,res,buf)=>{ req.rawBody=buf; } }));
-app.use(express.static(__dirname));
-// MAX SHOP public/admin entry routes (kept separate from Nexus Hub root files).
-app.get('/max-shop/', (req,res)=>res.sendFile(path.join(__dirname,'max-shop','max-index.html')));
-app.get('/max-shop/admin/', (req,res)=>res.sendFile(path.join(__dirname,'max-shop','max-admin.html')));
+
+// Serve the project from the same directory Railway starts Node from.
+// These explicit routes make the deployment work even when a browser opens
+// the common aliases without a trailing slash.
+app.use(express.static(__dirname, { extensions: ['html'] }));
+
+app.get('/', (req,res)=>res.sendFile(path.join(__dirname,'index.html')));
+app.get('/admin', (req,res)=>res.sendFile(path.join(__dirname,'admin.html')));
+app.get('/admin/', (req,res)=>res.sendFile(path.join(__dirname,'admin.html')));
+app.get('/admin.html', (req,res)=>res.sendFile(path.join(__dirname,'admin.html')));
+
+// MAX SHOP public entry + private admin entry.
+// The public /max-shop/ route is an introduction page. The actual store is
+// under /max-shop/store/. The admin page has no public link and uses a
+// configurable non-obvious path; authentication is still required.
+const MAXSHOP_ADMIN_PATH = normalizeRouteSegment(process.env.MAXSHOP_ADMIN_PATH || 'secure-portal-7k4m');
+
+function normalizeRouteSegment(value){
+  let s=String(value ?? '').trim().replace(/^\/+|\/+$/g,'');
+  s=s.replace(/[^a-zA-Z0-9_-]/g,'');
+  return s || 'secure-portal-7k4m';
+}
+
+app.get('/max-shop', (req,res)=>res.redirect(301, '/max-shop/'));
+app.get('/max-shop/', (req,res)=>res.sendFile(path.join(__dirname,'max-shop','max-introduction.html')));
+app.get('/max-shop/store', (req,res)=>res.redirect(301, '/max-shop/store/'));
+app.get('/max-shop/store/', (req,res)=>res.sendFile(path.join(__dirname,'max-shop','max-index.html')));
+app.get('/max-shop/store/index.html', (req,res)=>res.sendFile(path.join(__dirname,'max-shop','max-index.html')));
+
+// Deliberately do not expose the old predictable admin URLs.
+app.get(['/max-shop/admin','/max-shop/admin/','/max-shop/admin.html','/max-shop/max-admin.html'],
+  (req,res)=>res.status(404).send('Not found'));
+
+app.get(`/max-shop/${MAXSHOP_ADMIN_PATH}`, (req,res)=>res.redirect(301, `/max-shop/${MAXSHOP_ADMIN_PATH}/`));
+app.get(`/max-shop/${MAXSHOP_ADMIN_PATH}/`, (req,res)=>res.sendFile(path.join(__dirname,'max-shop','max-admin.html')));
 
 
 let sql = null;
@@ -202,7 +233,10 @@ function auth(req,res,next){
   try{ req.player=jwt.verify(token,JWT_SECRET); next(); }catch(e){ return res.status(401).json({error:'Session expired. Please log in again.'}); }
 }
 
-app.get('/api/health',(req,res)=>res.status(dbReady()?200:503).json({ok:dbReady(),database:dbReady(),adminAuth:!!(JWT_SECRET&&ADMIN_PASSWORD)}));
+// Railway health checks should confirm that the web server is alive.
+// Database availability is reported separately so a temporary/missing DB
+// does not make Railway mark the whole deployment as unhealthy/404.
+app.get('/api/health',(req,res)=>res.status(200).json({ok:true,database:dbReady(),databaseConfigured:!!DATABASE_URL,adminAuth:!!(JWT_SECRET&&ADMIN_PASSWORD)}));
 app.get('/api/config',(req,res)=>res.json({listingFee:LISTING_FEE_NGN,paystackPublicKey:PAYSTACK_PUBLIC_KEY}));
 
 app.get('/api/public-content', requireDb, async (req,res)=>{
