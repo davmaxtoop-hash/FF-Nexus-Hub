@@ -35,16 +35,21 @@ app.set('trust proxy', 1);
 
 app.use(express.json({ limit: '8mb', verify: (req,res,buf)=>{ req.rawBody=buf; } }));
 
-// MAX SHOP routes are intentionally declared BEFORE the static middleware.
-// This prevents Express' directory handling from issuing redirects for
-// /max-shop and /max-shop/store, which can cause ERR_TOO_MANY_REDIRECTS on
-// some Railway/proxy/browser combinations. Both slash and no-slash forms
-// serve the requested file directly.
-app.get(['/max-shop','/max-shop/'], (req,res)=>
-  res.sendFile(path.join(__dirname,'max-shop','max-introduction.html'))
+// MAX SHOP public routes. These routes intentionally serve files directly — no
+// redirects and no MAX SHOP index.html — so Railway/proxy/browser combinations
+// cannot get stuck in a redirect loop. The Nexus Hub root index.html remains
+// the site's main homepage.
+app.get(['/max-shop', '/max-shop/'], (req,res) =>
+  res.sendFile(path.join(__dirname, 'max-shop', 'max-introduction.html'))
 );
-app.get(['/max-shop/store','/max-shop/store/','/max-shop/store/index.html'], (req,res)=>
-  res.sendFile(path.join(__dirname,'max-shop','max-index.html'))
+app.get('/max-shop/max-introduction.html', (req,res) =>
+  res.sendFile(path.join(__dirname, 'max-shop', 'max-introduction.html'))
+);
+app.get(['/max-shop/store', '/max-shop/store/'], (req,res) =>
+  res.sendFile(path.join(__dirname, 'max-shop', 'max-index.html'))
+);
+app.get(['/max-shop/store/index.html', '/max-shop/max-index.html'], (req,res) =>
+  res.sendFile(path.join(__dirname, 'max-shop', 'max-index.html'))
 );
 
 // The admin page has no public link and uses a configurable non-obvious path;
