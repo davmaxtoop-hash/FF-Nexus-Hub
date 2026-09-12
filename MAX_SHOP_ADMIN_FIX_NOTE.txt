@@ -1,0 +1,13 @@
+MAX SHOP ADMIN OPTIMAL FIX — 2026-09-12
+
+The embedded MAX SHOP Admin is now loaded with iframe srcdoc from admin.html itself.
+It no longer depends on /max-shop/admin-panel/ for the embedded customer/admin flow,
+which prevents the embedded Not Found screen when Railway has an older server.js route.
+
+The embedded HTML is regenerated directly from max-shop/max-admin.html, including the
+form-based login/status UI. The MAX SHOP Admin API still uses:
+- MAXSHOP_ADMIN_PASSWORD
+- JWT_SECRET
+
+Deploy the entire FF_NEXUS_HUB folder contents to the GitHub repository root and let
+Railway redeploy. Do not merge this with an older version.
