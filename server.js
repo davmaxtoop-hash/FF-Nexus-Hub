@@ -92,6 +92,20 @@ async function initDb(){
     data JSONB NOT NULL DEFAULT '{}'::jsonb,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`;
+  await sql`CREATE TABLE IF NOT EXISTS support_payments (
+    id BIGSERIAL PRIMARY KEY,
+    name TEXT DEFAULT '',
+    email TEXT NOT NULL,
+    amount NUMERIC NOT NULL,
+    reference TEXT NOT NULL UNIQUE,
+    status TEXT NOT NULL DEFAULT 'Payment Pending',
+    payment_gateway_status TEXT DEFAULT '',
+    reviewed BOOLEAN NOT NULL DEFAULT FALSE,
+    reviewed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    paid_at TIMESTAMPTZ
+  )`;
+  await sql`CREATE INDEX IF NOT EXISTS support_payments_status_idx ON support_payments(status)`;
   await sql`CREATE TABLE IF NOT EXISTS tournament_registrations_db (
     id BIGSERIAL PRIMARY KEY,
     player_id BIGINT NOT NULL REFERENCES player_accounts(id) ON DELETE CASCADE,
@@ -246,6 +260,31 @@ async function verifyPaystack(reference){
   return data.data;
 }
 
+app.post('/api/support/initialize', requireDb, async (req,res)=>{
+  try{
+    if(!PAYSTACK_SECRET_KEY) return res.status(503).json({error:'Paystack is not configured. Add PAYSTACK_SECRET_KEY to the server environment.'});
+    const b=req.body||{};
+    const email=String(b.email||'').trim().toLowerCase();
+    const name=String(b.name||'').trim();
+    const amount=Math.round(Number(b.amount));
+    if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({error:'Please enter a valid email address.'});
+    if(!Number.isFinite(amount) || amount<=0) return res.status(400).json({error:'Enter any positive amount you want to support with.'});
+    const reference=`FFNEXUS_SUPPORT_${Date.now()}_${crypto.randomBytes(5).toString('hex')}`;
+    await sql`INSERT INTO support_payments (name,email,amount,reference,status) VALUES (${name},${email},${amount},${reference},'Payment Pending')`;
+    const base=APP_URL.replace(/\/$/,'') || `${req.protocol}://${req.get('host')}`;
+    const paystackResponse=await fetch('https://api.paystack.co/transaction/initialize',{
+      method:'POST',headers:{Authorization:`Bearer ${PAYSTACK_SECRET_KEY}`,'Content-Type':'application/json'},
+      body:JSON.stringify({email,amount:String(amount*100),currency:'NGN',reference,callback_url:`${base}/support/paystack/callback`,metadata:{support_payment:true,support_id:reference,name}})
+    });
+    const result=await paystackResponse.json();
+    if(!paystackResponse.ok || !result.status){
+      await sql`UPDATE support_payments SET status='Payment Initialization Failed' WHERE reference=${reference}`;
+      return res.status(502).json({error:result.message||'Could not initialize support payment.'});
+    }
+    res.status(201).json({reference:result.data.reference,authorization_url:result.data.authorization_url});
+  }catch(e){console.error('Support payment initialization error:',e);res.status(500).json({error:e.message||'Could not start support payment.'});}
+});
+
 app.post('/api/paystack/initialize', requireDb, async (req,res)=>{
   try{
     if(!PAYSTACK_SECRET_KEY) return res.status(503).json({error:'Paystack is not configured. Add PAYSTACK_SECRET_KEY to the server environment.'});
@@ -287,6 +326,21 @@ app.post('/api/applications', requireDb, async (req,res)=>{
   }catch(e){console.error(e);res.status(500).json({error:'Could not submit application.'});}
 });
 
+async function finalizeSupportPayment(reference){
+  const tx=await verifyPaystack(reference);
+  const rows=await sql`SELECT * FROM support_payments WHERE reference=${reference} LIMIT 1`;
+  if(!rows.length) return {found:false,tx};
+  const row=rows[0];
+  const expected=Math.round(Number(row.amount||0)*100);
+  const paid=tx.status==='success' && Number(tx.amount)===expected && String(tx.currency||'').toUpperCase()==='NGN';
+  if(!paid){
+    await sql`UPDATE support_payments SET status='Payment Failed',payment_gateway_status=${String(tx.status||'unknown')} WHERE id=${row.id}`;
+    return {found:true,paid:false,tx};
+  }
+  await sql`UPDATE support_payments SET status='Paid',payment_gateway_status='success',paid_at=NOW() WHERE id=${row.id} AND status<>'Paid'`;
+  return {found:true,paid:true,tx};
+}
+
 async function finalizePaystackPayment(reference){
   const tx=await verifyPaystack(reference);
   const rows=await sql`SELECT * FROM listing_applications WHERE payment_reference=${reference} OR payment_ref=${reference} LIMIT 1`;
@@ -323,6 +377,10 @@ app.get('/paystack/callback', requireDb, async (req,res)=>{
   try{
     const reference=String(req.query.reference||'').trim();
     if(!reference) return res.redirect('/?payment=failed');
+    if(reference.startsWith('FFNEXUS_SUPPORT_')){
+      const result=await finalizeSupportPayment(reference);
+      return res.redirect(result.paid?`/?support=success&reference=${encodeURIComponent(reference)}`:`/?support=failed&reference=${encodeURIComponent(reference)}`);
+    }
     const result=await finalizePaystackPayment(reference);
     res.redirect(result.paid?`/?payment=success&reference=${encodeURIComponent(reference)}`:`/?payment=failed&reference=${encodeURIComponent(reference)}`);
   }catch(e){console.error(e);res.redirect('/?payment=failed');}
@@ -336,9 +394,28 @@ app.post('/api/paystack/webhook', requireDb, async (req,res)=>{
     if(!PAYSTACK_SECRET_KEY || sig.length!==exp.length || !crypto.timingSafeEqual(sig,exp)) return res.sendStatus(401);
     res.sendStatus(200);
     if(req.body?.event==='charge.success' && req.body?.data?.reference){
-      try{await finalizePaystackPayment(String(req.body.data.reference));}catch(e){console.error('Paystack webhook processing error:',e);}
+      try{
+        const ref=String(req.body.data.reference);
+        if(ref.startsWith('FFNEXUS_SUPPORT_')) await finalizeSupportPayment(ref);
+        else await finalizePaystackPayment(ref);
+      }catch(e){console.error('Paystack webhook processing error:',e);}
     }
   }catch(e){console.error('Paystack webhook error:',e);res.sendStatus(400);}
+});
+
+app.get('/api/admin/support-payments', requireDb, adminAuth, async (req,res)=>{
+  try{
+    const rows=await sql`SELECT id,name,email,amount,reference,status,reviewed,reviewed_at,created_at,paid_at FROM support_payments ORDER BY created_at DESC`;
+    res.json({payments:rows});
+  }catch(e){console.error(e);res.status(500).json({error:'Could not load Support Reviews.'});}
+});
+
+app.post('/api/admin/support-payments/:id/review', requireDb, adminAuth, async (req,res)=>{
+  try{
+    const rows=await sql`UPDATE support_payments SET reviewed=TRUE,reviewed_at=NOW() WHERE id=${req.params.id} RETURNING *`;
+    if(!rows.length) return res.status(404).json({error:'Support payment not found.'});
+    res.json({payment:rows[0]});
+  }catch(e){console.error(e);res.status(500).json({error:'Could not mark support payment reviewed.'});}
 });
 
 app.get('/api/admin/applications', requireDb, adminAuth, async (req,res)=>{

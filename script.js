@@ -321,7 +321,7 @@ function renderAdminManagedListings(){
 
 function showAdminPage(page){
   if(!adminIsLoggedIn())return;
-  const allowed=["overview","creators","vendors","players","tournaments","news","payments","reports","settings","admin-settings","monthly-rankings","applications","leaderboard-admin","tournament-registrations"];
+  const allowed=["overview","creators","vendors","players","tournaments","news","payments","reports","settings","admin-settings","monthly-rankings","applications","leaderboard-admin","tournament-registrations","support-reviews"];
   if(!allowed.includes(page))page="overview";
   document.querySelectorAll(".admin-section").forEach(s=>s.classList.toggle("admin-current",s.id===page));
   document.querySelectorAll("[data-admin-page]").forEach(a=>a.classList.toggle("active",a.dataset.adminPage===page));
@@ -333,6 +333,7 @@ function showAdminPage(page){
   if(page==="monthly-rankings") loadMonthlyRankings();
   if(page==="news") renderAdminNews();
   if(page==="leaderboard-admin") refreshAdminLeaderboard();
+  if(page==="support-reviews") refreshSupportReviews();
 }
 
 /* Add Creator / Vendor / other admin records with a proper form. */
@@ -523,6 +524,134 @@ function renderPaymentMethodsOnPaymentsPage(){
   const methods=loadPaymentMethods();
   box.innerHTML=methods.map(m=>`<div class="payment-method-history"><b>${escapeAdminText(m.provider)}</b><span>${escapeAdminText(m.account)}</span><span>${escapeAdminText(m.name)}</span>${m.default?'<span class="status ok">Default</span>':''}</div>`).join('');
 }
+function normalizeSocialUrl(value, platform){
+  let v=String(value||'').trim();
+  if(!v)return '';
+  if(!/^https?:\/\//i.test(v)){
+    if(platform==='tiktok') v='https://www.tiktok.com/@'+v.replace(/^@/,'');
+    else if(platform==='instagram') v='https://www.instagram.com/'+v.replace(/^@/,'');
+    else v='https://'+v;
+  }
+  return v;
+}
+function normalizeWhatsAppNumber(value){
+  let v=String(value||'').trim();
+  if(!v)return '';
+  if(/^https?:\/\/wa\.me\//i.test(v)) return v;
+  v=v.replace(/[^0-9+]/g,'');
+  if(v.startsWith('+')) v=v.slice(1);
+  return v;
+}
+function whatsappHref(value){
+  const v=normalizeWhatsAppNumber(value);
+  if(!v)return '';
+  return /^https?:\/\/wa\.me\//i.test(v)?v:'https://wa.me/'+v;
+}
+function getSocialSettings(){
+  const s=(loadAdminData().siteSettings)||{};
+  const social=s.socialLinks||{};
+  return {tiktok:social.tiktok||'',instagram:social.instagram||'',whatsapp:Array.isArray(social.whatsapp)?social.whatsapp.slice(0,3):[]};
+}
+function renderWhatsAppSocialFields(values){
+  const box=document.getElementById('socialWhatsAppList'); if(!box)return;
+  const arr=(Array.isArray(values)?values:[]).filter(Boolean).slice(0,3);
+  box.innerHTML=arr.map((v,i)=>`<div class="whatsapp-social-row"><input class="social-wa-input" data-index="${i}" type="tel" value="${escapeAdminText(v)}" placeholder="WhatsApp number ${i+1}, e.g. 2348012345678"><button class="mini" type="button" onclick="removeWhatsAppSocialField(${i})">Remove</button></div>`).join('');
+}
+function addWhatsAppSocialField(){
+  const box=document.getElementById('socialWhatsAppList'); if(!box)return;
+  const values=Array.from(box.querySelectorAll('.social-wa-input')).map(x=>x.value.trim()).filter(Boolean);
+  if(values.length>=3){showToast('You can add up to 3 WhatsApp numbers.');return;}
+  values.push(''); renderWhatsAppSocialFields(values);
+  box.querySelectorAll('.social-wa-input')[values.length-1]?.focus();
+}
+function removeWhatsAppSocialField(index){
+  const box=document.getElementById('socialWhatsAppList'); if(!box)return;
+  const values=Array.from(box.querySelectorAll('.social-wa-input')).map(x=>x.value.trim());
+  values.splice(index,1); renderWhatsAppSocialFields(values);
+}
+function loadSocialLinksAdmin(){
+  const social=getSocialSettings();
+  const t=document.getElementById('socialTikTok'), i=document.getElementById('socialInstagram');
+  if(t)t.value=social.tiktok||'';
+  if(i)i.value=social.instagram||'';
+  renderWhatsAppSocialFields(social.whatsapp);
+}
+function saveSocialLinksFromAdmin(){
+  const d=loadAdminData(),s=d.siteSettings||{};
+  const values=Array.from(document.querySelectorAll('.social-wa-input')).map(x=>normalizeWhatsAppNumber(x.value)).filter(Boolean).slice(0,3);
+  s.socialLinks={
+    tiktok:normalizeSocialUrl(document.getElementById('socialTikTok')?.value,'tiktok'),
+    instagram:normalizeSocialUrl(document.getElementById('socialInstagram')?.value,'instagram'),
+    whatsapp:values
+  };
+  d.siteSettings=s;
+  saveAdminData(d);
+  return s.socialLinks;
+}
+function socialIconSvg(type){
+  if(type==='tiktok') return '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15.5 4.2c.7 2 2 3.2 4.2 3.4v3.1c-1.6 0-3-.5-4.2-1.4v6.1c0 3.7-2.7 6.1-6.2 6.1-3.2 0-5.6-2.1-5.6-5.2 0-3.5 3-5.8 6.5-5.4v3.2c-1.8-.3-3.2.6-3.2 2.1 0 1.2.9 2.1 2.2 2.1 1.6 0 2.8-1 2.8-3V4.2h3.5Z" fill="currentColor"/></svg>';
+  if(type==='instagram') return '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><circle cx="17.4" cy="6.7" r="1.1" fill="currentColor"/></svg>';
+  return '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20.5 3.5A11.9 11.9 0 0 0 12 0C5.4 0 .1 5.3.1 11.9c0 2.1.5 4.1 1.6 5.9L.1 24l6.4-1.7c1.7.9 3.6 1.4 5.5 1.4h.1c6.5 0 11.8-5.3 11.8-11.9 0-3.1-1.2-6.1-3.4-8.3ZM12.1 21.1c-1.7 0-3.4-.5-4.8-1.3l-.3-.2-3.8 1 1-3.7-.2-.3a9.3 9.3 0 1 1 8.1 4.5Zm5.1-7c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6.1-.2 0-.4 0-.6-.1-.2-.7-1.7-1-2.3-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.4 1.4 3.6c.2.2 2.4 3.7 5.9 5.1.8.3 1.4.5 1.9.7.8.2 1.5.2 2.1.1.6-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.1-.3-.2-.6-.3Z" fill="currentColor"/></svg>';
+}
+function closeWhatsAppSocialMenu(){document.querySelectorAll('.whatsapp-menu').forEach(x=>x.remove());}
+function openWhatsAppSocialMenu(anchor,numbers){
+  closeWhatsAppSocialMenu();
+  const menu=document.createElement('div'); menu.className='whatsapp-menu';
+  menu.innerHTML='<h4>Choose WhatsApp</h4>'+numbers.map((n,i)=>`<a href="${escapePublic(whatsappHref(n))}" target="_blank" rel="noopener">WhatsApp ${i+1}<span>${escapePublic(n)}</span></a>`).join('');
+  document.body.appendChild(menu);
+  const r=anchor.getBoundingClientRect();
+  const left=Math.min(Math.max(12,r.left),window.innerWidth-menu.offsetWidth-12);
+  const top=Math.max(12,r.top-menu.offsetHeight-10);
+  menu.style.left=left+'px';menu.style.top=top+'px';
+  setTimeout(()=>document.addEventListener('click',function handler(e){if(!menu.contains(e.target)&&e.target!==anchor){menu.remove();document.removeEventListener('click',handler)}},{once:true}),0);
+}
+function renderFooterSocialLinks(){
+  const root=document.getElementById('footerSocials'); if(!root)return;
+  let d={}; try{d=JSON.parse(localStorage.getItem(PUBLIC_ADMIN_DATA_KEY)||'{}')}catch(e){}
+  const social=d.siteSettings?.socialLinks||{};
+  const parts=[];
+  const t=normalizeSocialUrl(social.tiktok,'tiktok');
+  const i=normalizeSocialUrl(social.instagram,'instagram');
+  const wa=(Array.isArray(social.whatsapp)?social.whatsapp:[]).map(normalizeWhatsAppNumber).filter(Boolean).slice(0,3);
+  if(t)parts.push(`<a class="footer-social-btn" href="${escapePublic(t)}" target="_blank" rel="noopener" aria-label="TikTok" title="TikTok">${socialIconSvg('tiktok')}</a>`);
+  if(i)parts.push(`<a class="footer-social-btn" href="${escapePublic(i)}" target="_blank" rel="noopener" aria-label="Instagram" title="Instagram">${socialIconSvg('instagram')}</a>`);
+  if(wa.length===1)parts.push(`<a class="footer-social-btn whatsapp" href="${escapePublic(whatsappHref(wa[0]))}" target="_blank" rel="noopener" aria-label="WhatsApp" title="WhatsApp">${socialIconSvg('whatsapp')}</a>`);
+  if(wa.length>1)parts.push(`<button class="footer-social-btn whatsapp" type="button" aria-label="WhatsApp" title="WhatsApp" onclick="openWhatsAppSocialMenu(this,${JSON.stringify(wa).replace(/</g,'\\u003c')})">${socialIconSvg('whatsapp')}</button>`);
+  root.innerHTML=parts.join('');
+  root.style.display=parts.length?'flex':'none';
+}
+function openSupportVision(){
+  const settings=publicAdminData().siteSettings?.supportVision||{};
+  const overlay=document.createElement('div');
+  overlay.className='public-apply-overlay support-vision-overlay';
+  overlay.innerHTML=`<div class="public-apply-modal support-vision-modal"><button class="public-apply-close" type="button">×</button><span class="eyebrow">SUPPORT THE VISION</span><h2>${escapePublic(settings.title||'Support the Vision 💙')}</h2><p class="support-modal-copy">${escapePublic(settings.description||'If you like what we are building, you can support FF Nexus Hub with any amount you choose.')}</p><form><label>Name (optional)<input name="name" placeholder="Your name"></label><label>Email Address *<input name="email" type="email" required placeholder="you@example.com"></label><label>Amount (₦) *<input name="amount" type="number" min="1" step="1" required placeholder="Enter any amount"></label><button class="btn primary full" type="submit">Continue to Paystack</button></form><p class="public-apply-note">You choose the amount. Paystack securely handles the payment.</p><div id="supportPaymentResult"></div></div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('.public-apply-close').onclick=()=>overlay.remove();
+  overlay.querySelector('form').onsubmit=async e=>{
+    e.preventDefault();
+    const f=e.target, result=overlay.querySelector('#supportPaymentResult');
+    const amount=Math.round(Number(f.elements.amount.value));
+    result.textContent='Preparing secure payment...';
+    try{
+      if(!Number.isFinite(amount)||amount<=0) throw new Error('Enter a positive amount.');
+      const r=await fetch('/api/support/initialize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:f.elements.name.value.trim(),email:f.elements.email.value.trim(),amount})});
+      const x=await r.json().catch(()=>({}));
+      if(!r.ok) throw new Error(x.error||'Could not start support payment.');
+      if(!x.authorization_url) throw new Error('Paystack did not return a checkout link.');
+      window.location.href=x.authorization_url;
+    }catch(err){result.textContent=err.message||'Could not start support payment.';}
+  };
+}
+function applySupportVisionSettings(){
+  if(document.getElementById('adminApp')) return;
+  const s=publicAdminData().siteSettings?.supportVision||{};
+  const section=document.getElementById('support-vision'); if(!section)return;
+  const enabled=s.enabled!==false;
+  section.classList.toggle('hidden',!enabled);
+  const t=document.getElementById('supportVisionTitle'),d=document.getElementById('supportVisionDescription');
+  if(t)t.textContent=s.title||'Support the Vision 💙';
+  if(d)d.textContent=s.description||'If you like what we are building, you can support FF Nexus Hub with any amount you choose.';
+}
 function loadAdminWebsiteSettings(){
   const s=(loadAdminData().siteSettings)||{};
   const map={siteName:"websiteName",sitePhone:"phone",siteEmail:"email",siteWhatsApp:"whatsapp",siteAddress:"address",siteTagline:"tagline",siteDescription:"description",tournamentGroupLink:"tournamentGroupLink"};
@@ -531,14 +660,20 @@ function loadAdminWebsiteSettings(){
   const p=document.getElementById("siteLogoPreview");if(p&&s.logo)p.innerHTML='<img src="'+s.logo+'" style="max-width:180px;max-height:100px;object-fit:contain">';
   renderPaymentMethods();
   renderTournamentControls();
+  loadSocialLinksAdmin();
+  const sv=s.supportVision||{};
+  const en=document.getElementById('supportVisionEnabled');if(en)en.value=sv.enabled===false?'false':'true';
+  const st=document.getElementById('supportVisionTitle');if(st)st.value=sv.title||'Support the Vision 💙';
+  const sd=document.getElementById('supportVisionDescription');if(sd)sd.value=sv.description||'If you like what we are building, you can support FF Nexus Hub with any amount you choose.';
 }
 function saveAdminWebsiteSettings(){
   const d=loadAdminData(),s=d.siteSettings||{};
   const get=id=>document.getElementById(id)?.value.trim()||"";
   s.websiteName=get("siteName");s.phone=get("sitePhone");s.email=get("siteEmail");s.whatsapp=get("siteWhatsApp");s.address=get("siteAddress");s.tagline=get("siteTagline");s.description=get("siteDescription");s.tournamentGroupLink=get("tournamentGroupLink");
+  s.supportVision={enabled:document.getElementById('supportVisionEnabled')?.value!=='false',title:get('supportVisionTitle')||'Support the Vision 💙',description:get('supportVisionDescription')||'If you like what we are building, you can support FF Nexus Hub with any amount you choose.'};
   const feeRaw=get("listingFee").replace(/[^0-9.]/g,""); const feeNum=Number(feeRaw); s.listingFee=Number.isFinite(feeNum)&&feeNum>0?feeNum:10000;
   const file=document.getElementById("siteLogo")?.files?.[0];
-  const finish=logo=>{if(logo)s.logo=logo;d.siteSettings=s;d.paymentMethods=Array.isArray(d.paymentMethods)&&d.paymentMethods.length?d.paymentMethods:defaultPaymentMethods();saveAdminData(d);savePaymentMethodEdits();const m=document.getElementById("adminSettingsMessage");if(m)m.textContent="Admin Settings saved successfully.";showToast("Admin Settings saved.");adminTouch()};
+  const finish=logo=>{if(logo)s.logo=logo;s.socialLinks={tiktok:normalizeSocialUrl(document.getElementById('socialTikTok')?.value,'tiktok'),instagram:normalizeSocialUrl(document.getElementById('socialInstagram')?.value,'instagram'),whatsapp:Array.from(document.querySelectorAll('.social-wa-input')).map(x=>normalizeWhatsAppNumber(x.value)).filter(Boolean).slice(0,3)};d.siteSettings=s;d.paymentMethods=Array.isArray(d.paymentMethods)&&d.paymentMethods.length?d.paymentMethods:defaultPaymentMethods();saveAdminData(d);savePaymentMethodEdits();renderFooterSocialLinks();applySupportVisionSettings();const m=document.getElementById("adminSettingsMessage");if(m)m.textContent="Admin Settings saved successfully.";showToast("Admin Settings saved.");adminTouch()};
   if(file){if(!file.type.startsWith("image/"))return alert("Please choose an image file.");if(file.size>3*1024*1024)return alert("Please choose a logo under 3 MB.");const r=new FileReader();r.onload=e=>finish(e.target.result);r.readAsDataURL(file)}else finish(s.logo||"");
 }
 document.addEventListener("DOMContentLoaded",()=>{
@@ -551,6 +686,24 @@ document.addEventListener("DOMContentLoaded",()=>{
 });
 window.addEventListener("hashchange",()=>{if(document.getElementById("adminApp")&&adminIsLoggedIn())showAdminPage(location.hash.slice(1)||"overview")});
 ["click","keydown","touchstart","mousemove","scroll"].forEach(e=>document.addEventListener(e,adminTouch,{passive:true}));
+
+async function refreshSupportReviews(){
+  const box=document.getElementById('supportReviewsList'); if(!box)return;
+  try{
+    const d=await adminApi('/api/admin/support-payments');
+    const items=Array.isArray(d.payments)?d.payments:[];
+    if(!items.length){box.innerHTML='<p class="admin-form-help">No support payments yet.</p>';return;}
+    box.innerHTML=items.map(x=>{
+      const paid=String(x.status||'').toLowerCase()==='paid';
+      const reviewed=!!x.reviewed;
+      return `<div class="support-review-card"><div class="support-review-head"><div><b>${escapeAdminText(x.name||'Anonymous supporter')}</b><small>${escapeAdminText(x.email)}</small></div><span class="support-status ${paid?'paid':''}">${escapeAdminText(x.status)}</span></div><div class="support-review-meta"><span>Amount: <b>₦${Number(x.amount||0).toLocaleString('en-NG')}</b></span><span>Reference: ${escapeAdminText(x.reference)}</span><span>${new Date(x.created_at).toLocaleString('en-NG')}</span></div>${paid?(reviewed?'<div class="admin-form-help">✓ Reviewed</div>':`<button class="mini" type="button" onclick="reviewSupportPayment('${escapeAdminText(x.id)}')">Mark Reviewed</button>`):''}</div>`;
+    }).join('');
+  }catch(e){box.innerHTML='<p class="admin-form-help">'+escapeAdminText(e.message||'Could not load Support Reviews.')+'</p>';}
+}
+window.reviewSupportPayment=async function(id){
+  try{await adminApi('/api/admin/support-payments/'+encodeURIComponent(id)+'/review',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});showToast('Support payment marked reviewed.');refreshSupportReviews();}
+  catch(e){showToast(e.message||'Could not review support payment.');}
+};
 
 /* ===== PUBLIC SITE <-> ADMIN SETTINGS CONNECTION =====
    This section only reads the settings already saved by admin.html.
@@ -747,7 +900,7 @@ function renderAdminContentOnPublicSite(){
 }
 function escapeAdminPublicText(v){return String(v||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));}
 
-document.addEventListener("DOMContentLoaded",async()=>{await hydrateSharedAdminData();renderAdminContentOnPublicSite();});
+document.addEventListener("DOMContentLoaded",async()=>{await hydrateSharedAdminData();renderAdminContentOnPublicSite();applyAdminSettingsToWebsite();renderFooterSocialLinks();applySupportVisionSettings();});
 
 /* ===== MONTHLY CREATOR & VENDOR RANKINGS ===== */
 function currentRankingMonth(){

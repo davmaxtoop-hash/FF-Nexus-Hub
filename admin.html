@@ -67,6 +67,7 @@
 <a class="side" href="#admin-settings" data-admin-page="admin-settings">Admin Settings</a>
 <a class="side" href="#monthly-rankings" data-admin-page="monthly-rankings">Monthly Rankings</a>
 <a class="side" href="#applications" data-admin-page="applications">Applications</a>
+<a class="side" href="#support-reviews" data-admin-page="support-reviews">Support Reviews</a>
 </aside>
 <main class="dashboard">
 <section id="overview" class="admin-section"><div class="dash-head"><div><span class="eyebrow">CONTROL CENTER</span><h1>Dashboard Overview</h1></div><span class="status live">● SYSTEM ONLINE</span></div>
@@ -100,6 +101,26 @@
 <p class="admin-form-help">This is the amount shown to Creator and Vendor applicants on the main website. Player registration remains free.</p>
 <label>Logo from your device <input id="siteLogo" type="file" accept="image/*"></label>
 <div id="siteLogoPreview" style="margin:8px 0"></div>
+
+<div class="support-settings-manager">
+  <h3>Support the Vision</h3>
+  <p class="admin-form-help">This is separate from Creator/Vendor reviews. Turn the support section on or off and customize what supporters see.</p>
+  <label>Show Support the Vision <select id="supportVisionEnabled"><option value="true">ON</option><option value="false">OFF</option></select></label>
+  <label>Support title <input id="supportVisionTitle" placeholder="Support the Vision 💙"></label>
+  <label>Support description <textarea id="supportVisionDescription" placeholder="If you like what we are building, support us with any amount you choose."></textarea></label>
+</div>
+
+<div class="social-links-manager">
+  <h3>Footer Social Links</h3>
+  <p class="admin-form-help">Add the TikTok and Instagram pages and up to 3 WhatsApp numbers. These appear as icons in the public website footer.</p>
+  <label>TikTok page link <input id="socialTikTok" type="url" placeholder="https://www.tiktok.com/@yourpage"></label>
+  <label>Instagram page link <input id="socialInstagram" type="url" placeholder="https://www.instagram.com/yourpage"></label>
+  <div class="whatsapp-links-editor">
+    <div class="social-manager-head"><strong>WhatsApp numbers</strong><span>Maximum 3</span></div>
+    <div id="socialWhatsAppList"></div>
+    <button class="btn small" type="button" onclick="addWhatsAppSocialField()">+ Add WhatsApp Number</button>
+  </div>
+</div>
 
 <div class="payment-method-manager">
   <h3>Payment Methods</h3>
@@ -155,6 +176,11 @@
 
 <h1>Listing Applications</h1><p>Paid Creator/Vendor applications are published automatically after Paystack confirms payment. This page keeps the payment time, payer and reference for review/audit. Free Player applications still require manual review.</p>
 <div id="adminApplicationsList"></div>
+</section>
+
+<section class="admin-section" id="support-reviews" data-page="support-reviews">
+<div class="dash-head"><div><span class="eyebrow">SUPPORT THE VISION</span><h2>Support Reviews</h2></div><button class="btn primary small" type="button" onclick="refreshSupportReviews()">Refresh</button></div>
+<div class="panel"><p class="admin-form-help">Support payments are kept completely separate from Creator, Vendor and Player applications. Successful Paystack support payments appear here.</p><div id="supportReviewsList"><p class="admin-form-help">Loading support payments...</p></div></div>
 </section>
 
 </main>

@@ -116,13 +116,29 @@
 
 <section class="cta section"><h2>Ready to join the Nexus?</h2><p>Creators, vendors, tournament organizers and players can apply for listings through the platform.</p><a class="btn primary" href="#contact">Apply / Contact</a></section>
 
+<section id="support-vision" class="section support-vision-section">
+  <div class="support-vision-card glass">
+    <div>
+      <span class="eyebrow">SUPPORT THE VISION</span>
+      <h2 id="supportVisionTitle">Support the Vision 💙</h2>
+      <p id="supportVisionDescription">If you like what we are building, you can support FF Nexus Hub with any amount you choose.</p>
+    </div>
+    <button class="btn primary" type="button" onclick="openSupportVision()">Support Us</button>
+  </div>
+</section>
+
 <section id="contact" class="contact section">
   <div><span class="eyebrow">GET IN TOUCH</span><h2>Contact FF Nexus Hub</h2><p>Use the contact channel provided by the platform to request creator, vendor or tournament listings.</p></div>
   <form onsubmit="submitContact(event)"><input required placeholder="Full name"><input required placeholder="WhatsApp / phone"><select><option>Creator listing</option><option>Vendor listing</option><option>Tournament listing</option><option>Sponsored post</option><option>General inquiry</option></select><textarea required placeholder="Tell us what you need"></textarea><button class="btn primary">Send Request</button></form>
 </section>
 </main>
 
-<footer><b>FF NEXUS HUB</b><span>Community • Creators • Vendors • Tournaments</span><small>Fan/community platform. Not affiliated with Garena.</small></footer>
+<footer>
+  <div class="footer-brand"><b>FF NEXUS HUB</b><span>Community • Creators • Vendors • Tournaments</span></div>
+  <div id="footerSocials" class="footer-socials" aria-label="Social media links"></div>
+  <div class="footer-support-link"><a href="#support-vision">Support the Vision</a></div>
+  <small>Fan/community platform. Not affiliated with Garena.</small>
+</footer>
 <div id="toast"></div><div id="publicProfileRoot"></div>
 <script src="script.js"></script>
 </body>
