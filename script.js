@@ -554,12 +554,12 @@ function getSocialSettings(){
 }
 function renderWhatsAppSocialFields(values){
   const box=document.getElementById('socialWhatsAppList'); if(!box)return;
-  const arr=(Array.isArray(values)?values:[]).filter(Boolean).slice(0,3);
+  const arr=(Array.isArray(values)?values:[]).slice(0,3);
   box.innerHTML=arr.map((v,i)=>`<div class="whatsapp-social-row"><input class="social-wa-input" data-index="${i}" type="tel" value="${escapeAdminText(v)}" placeholder="WhatsApp number ${i+1}, e.g. 2348012345678"><button class="mini" type="button" onclick="removeWhatsAppSocialField(${i})">Remove</button></div>`).join('');
 }
 function addWhatsAppSocialField(){
   const box=document.getElementById('socialWhatsAppList'); if(!box)return;
-  const values=Array.from(box.querySelectorAll('.social-wa-input')).map(x=>x.value.trim()).filter(Boolean);
+  const values=Array.from(box.querySelectorAll('.social-wa-input')).map(x=>x.value.trim());
   if(values.length>=3){showToast('You can add up to 3 WhatsApp numbers.');return;}
   values.push(''); renderWhatsAppSocialFields(values);
   box.querySelectorAll('.social-wa-input')[values.length-1]?.focus();
