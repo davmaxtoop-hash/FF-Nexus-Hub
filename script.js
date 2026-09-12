@@ -607,7 +607,7 @@ function openWhatsAppSocialMenu(anchor,numbers){
   document.body.appendChild(menu);
   menu.querySelectorAll('.whatsapp-choice').forEach(btn=>btn.addEventListener('click',()=>{
     const href=whatsappHref(btn.dataset.wa);
-    if(href) window.open(href,'_blank','noopener,noreferrer');
+    if(href) window.location.href=href;
     menu.remove();
   }));
   menu.querySelector('.whatsapp-menu-close')?.addEventListener('click',()=>menu.remove());
@@ -626,8 +626,16 @@ function renderFooterSocialLinks(){
   if(t)parts.push(`<a class="footer-social-btn" href="${escapePublic(t)}" target="_blank" rel="noopener" aria-label="TikTok" title="TikTok">${socialIconSvg('tiktok')}</a>`);
   if(i)parts.push(`<a class="footer-social-btn" href="${escapePublic(i)}" target="_blank" rel="noopener" aria-label="Instagram" title="Instagram">${socialIconSvg('instagram')}</a>`);
   if(wa.length===1)parts.push(`<a class="footer-social-btn whatsapp" href="${escapePublic(whatsappHref(wa[0]))}" target="_blank" rel="noopener" aria-label="WhatsApp" title="WhatsApp">${socialIconSvg('whatsapp')}</a>`);
-  if(wa.length>1)parts.push(`<button class="footer-social-btn whatsapp" type="button" aria-label="WhatsApp" title="WhatsApp" onclick="openWhatsAppSocialMenu(this,${JSON.stringify(wa).replace(/</g,'\\u003c')})">${socialIconSvg('whatsapp')}</button>`);
+  if(wa.length>1)parts.push(`<button class="footer-social-btn whatsapp" type="button" data-whatsapp-numbers="${escapeAdminText(JSON.stringify(wa))}" aria-label="WhatsApp" title="WhatsApp">${socialIconSvg('whatsapp')}</button>`);
   root.innerHTML=parts.join('');
+  const multi=root.querySelector('[data-whatsapp-numbers]');
+  if(multi){
+    multi.addEventListener('click',()=>{
+      let numbers=[];
+      try{numbers=JSON.parse(multi.getAttribute('data-whatsapp-numbers')||'[]')}catch(e){}
+      openWhatsAppSocialMenu(multi,numbers);
+    });
+  }
   root.style.display=parts.length?'flex':'none';
 }
 function openSupportVision(){
