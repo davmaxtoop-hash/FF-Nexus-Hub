@@ -1,0 +1,14 @@
+MAX SHOP ADMIN
+===============
+Public MAX SHOP does not show an admin link.
+
+Secure admin route:
+ /max-shop/secure-portal-7k4m/
+
+Railway URL:
+ https://ff-nexus-hub-production.up.railway.app/max-shop/secure-portal-7k4m/
+
+Environment variable:
+ MAXSHOP_ADMIN_PASSWORD
+
+The MAX SHOP admin is separate from the main FF Nexus Hub admin.
