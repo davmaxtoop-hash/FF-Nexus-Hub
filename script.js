@@ -327,7 +327,7 @@ function renderAdminManagedListings(){
 
 function showAdminPage(page){
   if(!adminIsLoggedIn())return;
-  const allowed=["overview","creators","vendors","players","tournaments","news","payments","reports","settings","admin-settings","monthly-rankings","applications","leaderboard-admin","tournament-registrations","support-reviews"];
+  const allowed=["overview","creators","vendors","players","tournaments","news","payments","reports","settings","admin-settings","monthly-rankings","applications","leaderboard-admin","tournament-registrations","support-reviews","max-shop-admin"];
   if(!allowed.includes(page))page="overview";
   document.querySelectorAll(".admin-section").forEach(s=>s.classList.toggle("admin-current",s.id===page));
   document.querySelectorAll("[data-admin-page]").forEach(a=>a.classList.toggle("active",a.dataset.adminPage===page));
@@ -340,6 +340,7 @@ function showAdminPage(page){
   if(page==="news") renderAdminNews();
   if(page==="leaderboard-admin") refreshAdminLeaderboard();
   if(page==="support-reviews") refreshSupportReviews();
+  if(page==="max-shop-admin") openMaxShopAdmin();
 }
 
 /* Add Creator / Vendor / other admin records with a proper form. */
