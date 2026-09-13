@@ -18,8 +18,10 @@ footer{text-align:center;border-top:1px solid #252833;color:#7f8594;padding:30px
 @media(max-width:800px){.review-summary,.review-layout{grid-template-columns:1fr}.review-list{max-height:none}}
 
 
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
-.modal-card{width:min(520px,100%);position:relative}.modal-close{position:absolute;right:14px;top:10px;border:0;background:transparent;font-size:28px;cursor:pointer}
+.modal{position:fixed;inset:0;background:rgba(2,4,9,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto}
+.modal-card{width:min(560px,100%);position:relative;background:linear-gradient(180deg,#171a23 0%,#101219 100%);border:1px solid #303541;border-radius:26px;padding:0;box-shadow:0 28px 90px rgba(0,0,0,.55);overflow:hidden}
+.modal-close{position:absolute;right:16px;top:15px;width:40px;height:40px;border:1px solid #343844;background:#20232c;color:#fff;border-radius:12px;font-size:25px;line-height:1;cursor:pointer;z-index:2}.modal-close:hover{background:#292d38}
+.order-modal-head{padding:25px 58px 20px 24px;background:linear-gradient(135deg,#1b1e27,#17120a);border-bottom:1px solid #2c303a}.order-brand{display:flex;align-items:center;gap:10px;font-size:12px;letter-spacing:1.5px;font-weight:950;color:#ffc33b;text-transform:uppercase}.order-brand-badge{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,#ffd21c,#ff7800);color:#17110a;font-size:17px}.order-modal-head h2{font-size:30px;margin:12px 0 6px;line-height:1.1}.order-subtitle{margin:0;color:#9da4b3;font-size:14px;line-height:1.5}.order-summary{margin:20px 24px 16px;padding:15px 16px;border:1px solid #343844;border-radius:17px;background:#0d1016;display:flex;justify-content:space-between;gap:14px;align-items:center}.order-summary-label{color:#8f96a5;font-size:11px;text-transform:uppercase;letter-spacing:1.2px;font-weight:900}.order-summary-name{font-size:17px;font-weight:900;margin-top:4px}.order-summary-price{font-size:21px;font-weight:950;color:#ffc247;white-space:nowrap}.secure-payment{margin:0 24px 18px;padding:15px 16px;border:1px solid #3b3420;border-radius:17px;background:linear-gradient(135deg,#1b170d,#11131a);display:flex;gap:12px;align-items:flex-start}.secure-icon{width:38px;height:38px;flex:0 0 38px;border-radius:11px;display:grid;place-items:center;background:#28200e;color:#ffd05a;font-size:18px}.secure-payment strong{display:block;font-size:14px;margin-bottom:4px}.secure-payment p{margin:0;color:#969dac;font-size:12px;line-height:1.5}.order-form{padding:0 24px 24px}.order-form-title{font-size:13px;font-weight:900;color:#dfe3ea;margin:0 0 12px}.order-fields{display:grid;gap:12px}.order-field{display:grid;gap:7px}.order-field label{font-size:12px;color:#b8bec9;font-weight:800}.order-field input{width:100%;border:1px solid #303440;background:#0d1016;color:#fff;border-radius:13px;padding:13px 14px;font:inherit;outline:none}.order-field input:focus{border-color:#ffc247;box-shadow:0 0 0 3px rgba(255,194,71,.10)}.order-field input::placeholder{color:#666d7b}.order-pay{width:100%;margin-top:16px;min-height:50px;font-size:15px;display:flex;align-items:center;justify-content:center;gap:9px}.order-footnote{text-align:center;color:#777f8e;font-size:11px;line-height:1.5;margin:11px 0 0}@media(max-width:480px){.modal{padding:10px}.order-modal-head{padding:22px 55px 18px 18px}.order-modal-head h2{font-size:26px}.order-summary,.secure-payment{margin-left:18px;margin-right:18px}.order-form{padding:0 18px 18px}.order-summary{align-items:flex-start}.order-summary-price{font-size:18px}}
 
 </style>
 </head>
@@ -225,7 +227,9 @@ function startDiamondOrder(id){
   if(!pkg)return;
   document.getElementById("orderPackageName").value=pkg.name;
   document.getElementById("orderPackagePrice").value=pkg.price;
-  document.getElementById("orderPackage").textContent=pkg.name+" — "+money(pkg.price);
+  document.getElementById("orderPackage").textContent=pkg.name;
+  const priceDisplay=document.getElementById("orderPackagePriceDisplay");
+  if(priceDisplay)priceDisplay.textContent=money(pkg.price);
   document.getElementById("paymentInfo").textContent="Secure payment is handled by Paystack through FF Nexus Hub. After payment is verified, your Free Fire top-up request will be processed.";
   document.getElementById("orderModal").style.display="flex";
 }
@@ -293,23 +297,33 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 
 <div id="orderModal" class="modal" style="display:none">
-  <div class="card modal-card">
-    <button class="modal-close" type="button" onclick="closeOrderModal()">×</button>
-    <div class="eyebrow">DIAMOND ORDER</div>
-    <h2 id="orderTitle">Place your order</h2>
-    <p id="orderPackage" class="muted"></p>
-    <div class="card" style="margin:12px 0;padding:14px">
-      <strong>💳 Payment Information</strong>
-      <p id="paymentInfo" class="muted" style="white-space:pre-line;margin-bottom:0"></p>
+  <div class="modal-card">
+    <button class="modal-close" type="button" aria-label="Close order" onclick="closeOrderModal()">×</button>
+    <div class="order-modal-head">
+      <div class="order-brand"><span class="order-brand-badge">💎</span> MAX SHOP SECURE CHECKOUT</div>
+      <h2 id="orderTitle">Place your order</h2>
+      <p class="order-subtitle">Enter your details below to continue to secure payment.</p>
     </div>
-    <form id="diamondOrderForm">
+    <div class="order-summary">
+      <div><div class="order-summary-label">Selected package</div><div id="orderPackage" class="order-summary-name">Diamond Package</div></div>
+      <div id="orderPackagePriceDisplay" class="order-summary-price">₦0</div>
+    </div>
+    <div class="secure-payment">
+      <div class="secure-icon">🔒</div>
+      <div><strong>Secure Paystack payment</strong><p id="paymentInfo">Secure payment is handled by Paystack through FF Nexus Hub. After payment is verified, your Free Fire top-up request will be processed.</p></div>
+    </div>
+    <form id="diamondOrderForm" class="order-form">
       <input type="hidden" id="orderPackageName">
       <input type="hidden" id="orderPackagePrice">
-      <label>Your name<input id="orderCustomerName" required maxlength="60"></label>
-      <label>WhatsApp / phone<input id="orderPhone" required maxlength="30"></label>
-      <label>Free Fire UID<input id="orderUid" required maxlength="30"></label>
-      <label>Email for payment receipt<input id="orderEmail" type="email" required maxlength="120" placeholder="you@example.com"></label>
-      <button class="btn gold" type="submit">Pay with Paystack</button>
+      <p class="order-form-title">Customer information</p>
+      <div class="order-fields">
+        <div class="order-field"><label for="orderCustomerName">Full name</label><input id="orderCustomerName" required maxlength="60" autocomplete="name" placeholder="Enter your full name"></div>
+        <div class="order-field"><label for="orderPhone">WhatsApp / phone</label><input id="orderPhone" required maxlength="30" autocomplete="tel" placeholder="Enter your WhatsApp number"></div>
+        <div class="order-field"><label for="orderUid">Free Fire UID</label><input id="orderUid" required maxlength="30" inputmode="numeric" placeholder="Enter your Free Fire UID"></div>
+        <div class="order-field"><label for="orderEmail">Email for payment receipt</label><input id="orderEmail" type="email" required maxlength="120" autocomplete="email" placeholder="you@example.com"></div>
+      </div>
+      <button class="btn gold order-pay" type="submit">🔒 Pay securely with Paystack</button>
+      <p class="order-footnote">You will be redirected to Paystack to complete your payment securely.</p>
     </form>
   </div>
 </div>
