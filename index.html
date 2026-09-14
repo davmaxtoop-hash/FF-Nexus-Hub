@@ -265,12 +265,11 @@ function enterMaxShop(){
   const f=document.getElementById('maxShopFrameWrap');
   const frame=document.getElementById('maxShopFrame');
   if(!f||!frame)return;
-  // IMPORTANT: use srcdoc, not /max-shop/store/. This removes the public
-  // MAX SHOP route from the customer flow and prevents Railway path/routing
-  // problems from producing a blank iframe.
-  if(!frame.srcdoc){
-    frame.srcdoc=MAX_SHOP_EMBED_HTML;
-  }
+  // Recreate the embedded shop every time it is opened. This forces a fresh
+  // /api/maxshop/data request, so Admin price/package changes appear without
+  // requiring the visitor to refresh the whole Nexus Hub page.
+  frame.srcdoc='';
+  frame.srcdoc=MAX_SHOP_EMBED_HTML;
   f.classList.add('open');
   f.setAttribute('aria-hidden','false');
   document.body.style.overflow='hidden';
